@@ -108,3 +108,35 @@
   75% { transform: translate(calc(var(--float-distance) * -1), var(--float-distance)) rotate(270deg); }
   100% { transform: translate(0, 0) rotate(360deg); }
 }
+
+/* Remove the duplicate float animation and update scrollbar styles */
+html, body {
+  overflow: hidden !important;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+.min-h-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+
+/* Keep other existing styles... */
