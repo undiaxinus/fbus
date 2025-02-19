@@ -1,0 +1,110 @@
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-fade-in-delayed {
+  animation: fadeIn 0.8s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Hover effects */
+.feature-card {
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Gradient text animation */
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text {
+  background-size: 200% auto;
+  animation: gradientFlow 3s ease infinite;
+}
+
+/* Background grid animation */
+@keyframes gridMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-40px); }
+}
+
+.animate-grid {
+  animation: gridMove 20s linear infinite;
+}
+
+/* Floating particles animation */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float var(--float-duration) ease-in-out infinite;
+  --float-duration: 6s;
+  --float-distance: 50px;
+  --float-direction: -1;
+  opacity: 0.9;
+  z-index: 6;
+  box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+  backdrop-filter: blur(2px);
+}
+
+.particle:nth-child(1) { left: 10%; top: 20%; --float-duration: 12s; background: rgba(59, 130, 246, 0.9); }
+.particle:nth-child(2) { left: 20%; top: 40%; --float-duration: 15s; background: rgba(16, 185, 129, 0.9); }
+.particle:nth-child(3) { left: 30%; top: 60%; --float-duration: 14s; background: rgba(99, 102, 241, 0.9); }
+.particle:nth-child(4) { left: 40%; top: 80%; --float-duration: 16s; background: rgba(236, 72, 153, 0.9); }
+.particle:nth-child(5) { left: 50%; top: 30%; --float-duration: 13s; background: rgba(139, 92, 246, 0.9); }
+.particle:nth-child(6) { left: 60%; top: 50%; --float-duration: 17s; background: rgba(14, 165, 233, 0.9); }
+.particle:nth-child(7) { left: 70%; top: 70%; --float-duration: 14s; background: rgba(34, 197, 94, 0.9); }
+.particle:nth-child(8) { left: 80%; top: 25%; --float-duration: 15s; background: rgba(168, 85, 247, 0.9); }
+
+@keyframes float {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--float-direction) * var(--float-distance)), var(--float-distance)); }
+  50% { transform: translate(0, calc(var(--float-distance) * 2)); }
+  75% { transform: translate(calc(var(--float-direction) * -1 * var(--float-distance)), var(--float-distance)); }
+  100% { transform: translate(0, 0); }
+}
+
+.particle:nth-child(odd) { --float-direction: 1; }
+.particle:nth-child(even) { --float-direction: -1; }
+.particle:nth-child(1) { animation: float 6s ease-in-out infinite; left: 10%; top: 20%; }
+.particle:nth-child(2) { animation: float 8s ease-in-out infinite; left: 20%; top: 40%; }
+.particle:nth-child(3) { animation: float 7s ease-in-out infinite; left: 30%; top: 60%; }
+.particle:nth-child(4) { animation: float 9s ease-in-out infinite; left: 40%; top: 80%; }
+.particle:nth-child(5) { animation: float 5s ease-in-out infinite; left: 50%; top: 30%; }
+.particle:nth-child(6) { animation: float 8s ease-in-out infinite; left: 60%; top: 50%; }
+.particle:nth-child(7) { animation: float 6s ease-in-out infinite; left: 70%; top: 70%; }
+.particle:nth-child(8) { animation: float 7s ease-in-out infinite; left: 80%; top: 25%; }
+
+@keyframes float {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(var(--float-distance), var(--float-distance)) rotate(90deg); }
+  50% { transform: translate(0, calc(var(--float-distance) * 2)) rotate(180deg); }
+  75% { transform: translate(calc(var(--float-distance) * -1), var(--float-distance)) rotate(270deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
