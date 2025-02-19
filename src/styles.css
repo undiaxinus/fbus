@@ -1,21 +1,117 @@
-/* You can add global styles to this file, and also import other style files */
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Base styles */
 @layer base {
   html {
     font-family: 'Roboto', sans-serif;
+    scroll-behavior: smooth;
+    @apply antialiased;
+  }
+  
+  body {
+    @apply bg-black text-white min-h-screen;
+    overflow-x: hidden;
+  }
+
+  /* Video background styles */
+  video {
+    @apply opacity-75;
+    filter: brightness(0.6) contrast(1.1);
+  }
+
+  /* Smooth scrolling for Safari */
+  @supports (-webkit-overflow-scrolling: touch) {
+    body {
+      -webkit-overflow-scrolling: touch;
+    }
   }
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+/* Custom utilities */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .text-shadow-sm {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .bg-radial-gradient-blue {
+    background: radial-gradient(circle at center, rgba(59,130,246,0.2), transparent);
+  }
+
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .backdrop-blur-lg {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+/* Animation utilities */
+@layer utilities {
+  .animation-delay-150 {
+    animation-delay: 150ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animation-delay-450 {
+    animation-delay: 450ms;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+
+  .animation-duration-1000 {
+    animation-duration: 1000ms;
+  }
+
+  .animation-duration-1500 {
+    animation-duration: 1500ms;
+  }
+
+  .animation-duration-2000 {
+    animation-duration: 2000ms;
+  }
+
+  /* Scroll indicator animations */
+  @keyframes float-up-down {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-float-up-down {
+    animation: float-up-down 2s ease-in-out infinite;
+  }
 }
+
+/* Scroll behavior */
+html {
+  scroll-padding-top: 2rem;
+  scroll-behavior: smooth;
+  
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+  }
+} 
