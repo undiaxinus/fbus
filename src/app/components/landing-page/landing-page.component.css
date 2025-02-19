@@ -83,11 +83,11 @@
 .particle:nth-child(8) { left: 80%; top: 25%; --float-duration: 15s; background: rgba(168, 85, 247, 0.9); }
 
 @keyframes float {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(calc(var(--float-direction) * var(--float-distance)), var(--float-distance)); }
-  50% { transform: translate(0, calc(var(--float-distance) * 2)); }
-  75% { transform: translate(calc(var(--float-direction) * -1 * var(--float-distance)), var(--float-distance)); }
-  100% { transform: translate(0, 0); }
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(var(--float-distance), var(--float-distance)) rotate(90deg); }
+  50% { transform: translate(0, calc(var(--float-distance) * 2)) rotate(180deg); }
+  75% { transform: translate(calc(var(--float-distance) * -1), var(--float-distance)) rotate(270deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
 }
 
 .particle:nth-child(odd) { --float-direction: 1; }
