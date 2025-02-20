@@ -11,9 +11,82 @@ interface MenuItem {
 
 @Component({
   selector: 'app-sidebar',
-  templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule],
+  template: `
+    <div class="flex flex-col h-screen bg-[#1e1e2d] shadow-xl">
+      <!-- Logo Section -->
+      <div class="py-6 px-5">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white/10 rounded-lg">
+            <img src="assets/logo.png" alt="Logo" class="h-8 w-8">
+          </div>
+          <span class="text-xl font-bold text-white tracking-wide">Fidelity Bond</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="flex-1 px-4 py-6">
+        <!-- Menu Section -->
+        <div class="mb-4 px-2">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Menu</h2>
+        </div>
+        
+        <ul class="space-y-1.5">
+          <li *ngFor="let item of menuItems">
+            <a [routerLink]="item.route"
+               routerLinkActive="bg-[#2a2a3c] text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-8 before:w-1 before:bg-blue-500 before:rounded-r"
+               [routerLinkActiveOptions]="{exact: item.route.endsWith('dashboard')}"
+               class="flex items-center px-3 py-2.5 text-gray-400 hover:text-white rounded-lg relative overflow-hidden hover:bg-[#2a2a3c] transition-all duration-300 group">
+              <div class="flex items-center w-full relative z-10">
+                <div class="p-2 rounded-lg bg-[#1e1e2d] group-hover:bg-white/5 transition-colors duration-300">
+                  <svg class="h-[22px] w-[22px] transform group-hover:scale-110 transition-all duration-300" 
+                       fill="none" 
+                       stroke="currentColor" 
+                       viewBox="0 0 24 24">
+                    <path stroke-linecap="round" 
+                          stroke-linejoin="round" 
+                          stroke-width="1.75" 
+                          [attr.d]="item.icon"/>
+                  </svg>
+                </div>
+                <span class="ml-3 font-medium tracking-wide text-sm group-hover:translate-x-1 transition-transform duration-300">
+                  {{ item.title }}
+                </span>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Footer Section -->
+      <div class="px-4 pb-6">
+        <div class="px-2 mb-3">
+          <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</h2>
+        </div>
+        <!-- Logout Button -->
+        <button (click)="logout()" 
+                class="w-full flex items-center px-3 py-2.5 text-gray-400 hover:text-white rounded-lg relative overflow-hidden hover:bg-[#2a2a3c] transition-all duration-300 group">
+          <div class="flex items-center w-full relative z-10">
+            <div class="p-2 rounded-lg bg-[#1e1e2d] group-hover:bg-red-500/10 transition-colors duration-300">
+              <svg class="h-[22px] w-[22px] transform group-hover:scale-110 transition-all duration-300" 
+                   fill="none" 
+                   stroke="currentColor" 
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="1.75" 
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </div>
+            <span class="ml-3 font-medium tracking-wide text-sm group-hover:translate-x-1 transition-transform duration-300">
+              Logout
+            </span>
+          </div>
+        </button>
+      </div>
+    </div>
+  `
 })
 export class SidebarComponent implements OnInit {
   menuItems: MenuItem[] = [];
