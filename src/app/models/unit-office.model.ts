@@ -1,5 +1,5 @@
 export interface UnitOffice {
-    id?: number;
+    id?: string;
     unit: string;
     unit_office: string;
     name?: string;
@@ -11,4 +11,9 @@ export interface UnitOffice {
     status?: 'active' | 'inactive';
     created_at?: string;
     updated_at?: string;
+    deleted_at?: string;
+    units?: {
+        id: string;
+        units: string;
+    };
 }

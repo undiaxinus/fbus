@@ -11,8 +11,8 @@ import { UnitOffice } from '../../../../../models/unit-office.model';
   templateUrl: './admin-units.component.html'
 })
 export class AdminUnitsComponent implements OnInit {
-  units: UnitOffice[] = [];
-  filteredUnits: UnitOffice[] = [];
+  units: any[] = [];
+  filteredUnits: any[] = [];
   showModal = false;
   showDeleteModal = false;
   showSuccessAlert = false;
@@ -30,6 +30,11 @@ export class AdminUnitsComponent implements OnInit {
   
   // Filter property
   filterText = '';
+  // Sorting properties
+  sortField: string | null = null;
+  sortDirection: 'asc' | 'desc' | null = null;
+  // Available units for dropdown
+  availableUnits: { unit: string }[] = [];
 
   constructor(private supabaseService: SupabaseService) {}
 
@@ -43,17 +48,38 @@ export class AdminUnitsComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadUnits();
+    await this.loadAvailableUnits();
+  }
+
+  async loadAvailableUnits() {
+    try {
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_units')
+        .select('units')
+        .is('deleted_at', null);
+
+      if (error) throw error;
+      this.availableUnits = data.map((item: any) => ({
+        unit: item.units
+      }));
+    } catch (error) {
+      console.error('Error fetching available units:', error);
+    }
   }
 
   async loadUnits() {
     try {
       const { data, error } = await this.supabaseService.getClient()
         .from('fbus_unit_office')
-        .select('*')
+        .select('*, fbus_units!inner(*)')
         .is('deleted_at', null);
 
       if (error) throw error;
-      this.units = data;
+      this.units = data.map((item: any) => ({
+        ...item,
+        unit: item.fbus_units.units,
+        unit_office: item.unit_office
+      }));
       this.applyFilterAndPagination();
     } catch (error) {
       console.error('Error fetching units:', error);
@@ -71,6 +97,16 @@ export class AdminUnitsComponent implements OnInit {
       );
     }
 
+    // Apply sorting
+    if (this.sortField && this.sortDirection) {
+      filtered.sort((a, b) => {
+        const aValue = a[this.sortField!].toLowerCase();
+        const bValue = b[this.sortField!].toLowerCase();
+        const direction = this.sortDirection === 'asc' ? 1 : -1;
+        return aValue.localeCompare(bValue) * direction;
+      });
+    }
+
     // Calculate total pages
     this.totalPages = Math.ceil(filtered.length / this.pageSize);
     
@@ -82,6 +118,18 @@ export class AdminUnitsComponent implements OnInit {
     // Get paginated data
     const startIndex = (this.currentPage - 1) * this.pageSize;
     this.filteredUnits = filtered.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  sort(field: string) {
+    if (this.sortField === field) {
+      // Toggle direction if same field is clicked
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      // Set new field and default to ascending
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    this.applyFilterAndPagination();
   }
 
   onFilter() {
@@ -103,10 +151,21 @@ export class AdminUnitsComponent implements OnInit {
         return;
       }
 
+      // First, create the unit in fbus_units table
+      const { data: unitData, error: unitError } = await this.supabaseService.getClient()
+        .from('fbus_units')
+        .insert([{
+          units: this.newUnit.unit.trim()
+        }])
+        .select();
+
+      if (unitError) throw unitError;
+
+      // Then create the unit office with the reference to the unit
       const { data, error } = await this.supabaseService.getClient()
         .from('fbus_unit_office')
         .insert([{
-          unit: this.newUnit.unit.trim(),
+          unit: unitData[0].id,
           unit_office: this.newUnit.unit_office.trim()
         }])
         .select();
@@ -138,10 +197,12 @@ export class AdminUnitsComponent implements OnInit {
   async confirmDelete() {
     if (this.unitToDelete) {
       try {
+        const timestamp = new Date().toISOString();
         const { error } = await this.supabaseService.getClient()
           .from('fbus_unit_office')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('unit', this.unitToDelete.unit);
+          .update({ deleted_at: timestamp })
+          .eq('id', this.unitToDelete.id)
+          .is('deleted_at', null);
 
         if (error) throw error;
 
