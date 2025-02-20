@@ -1,13 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
 import { Router, ActivatedRouteSnapshot } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthGuard {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   canActivate(route: ActivatedRouteSnapshot): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false; // Return false for server-side rendering
+    }
+
     const currentUser = localStorage.getItem('currentUser');
     
     if (currentUser) {
@@ -23,4 +31,4 @@ export class AuthGuard {
     this.router.navigate(['/fidelity-bond/login']);
     return false;
   }
-} 
+}

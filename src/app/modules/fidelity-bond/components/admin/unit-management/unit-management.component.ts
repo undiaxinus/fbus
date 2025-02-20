@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { UnitOfficeService, UnitOffice } from '../../../../../services/unit-office.service';
 
 interface Unit {
   id: number;
@@ -19,46 +20,35 @@ interface Unit {
   imports: [CommonModule, FormsModule],
   templateUrl: './unit-management.component.html'
 })
-export class UnitManagementComponent {
-  units: Unit[] = [
-    {
-      id: 1,
-      name: 'Finance Department',
-      code: 'FIN',
-      description: 'Handles financial operations and reporting',
-      totalEmployees: 25,
-      activeBonds: 20,
-      status: 'Active',
-      head: 'John Smith'
-    },
-    {
-      id: 2,
-      name: 'Accounting Department',
-      code: 'ACC',
-      description: 'Manages accounting and bookkeeping',
-      totalEmployees: 30,
-      activeBonds: 28,
-      status: 'Active',
-      head: 'Maria Garcia'
-    },
-    {
-      id: 3,
-      name: 'Treasury Department',
-      code: 'TRE',
-      description: 'Manages cash flow and investments',
-      totalEmployees: 15,
-      activeBonds: 12,
-      status: 'Active',
-      head: 'Robert Chen'
-    }
-  ];
-
+export class UnitManagementComponent implements OnInit {
+  units: Unit[] = [];
   searchTerm: string = '';
   selectedStatus: string = 'all';
   showAddUnitModal: boolean = false;
-
   statuses: string[] = ['Active', 'Inactive', 'Under Review'];
-
+  constructor(private unitOfficeService: UnitOfficeService) {}
+  ngOnInit() {
+    this.loadUnitOffices();
+  }
+  loadUnitOffices() {
+    this.unitOfficeService.getUnitOffices().subscribe({
+      next: (unitOffices: UnitOffice[]) => {
+        this.units = unitOffices.map(office => ({
+          id: office.id,
+          name: office.unit,
+          code: office.unit_office,
+          description: `${office.unit} - ${office.unit_office}`,
+          totalEmployees: 0,
+          activeBonds: 0,
+          status: 'Active',
+          head: ''
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading unit offices:', error);
+      }
+    });
+  }
   get filteredUnits(): Unit[] {
     return this.units.filter(unit => {
       const matchesSearch = 
@@ -70,7 +60,6 @@ export class UnitManagementComponent {
       return matchesSearch && matchesStatus;
     });
   }
-
   getStatusColor(status: string): string {
     switch (status.toLowerCase()) {
       case 'active':
@@ -83,12 +72,14 @@ export class UnitManagementComponent {
         return 'bg-gray-100 text-gray-800';
     }
   }
-
   getBondCoveragePercentage(unit: Unit): number {
-    return (unit.activeBonds / unit.totalEmployees) * 100;
+    return unit.totalEmployees > 0 ? (unit.activeBonds / unit.totalEmployees) * 100 : 0;
   }
-
   deleteUnit(id: number): void {
-    this.units = this.units.filter(unit => unit.id !== id);
+    this.unitOfficeService.deleteUnitOffice(id).then(() => {
+      this.units = this.units.filter(unit => unit.id !== id);
+    }).catch(error => {
+      console.error('Error deleting unit:', error);
+    });
   }
 }

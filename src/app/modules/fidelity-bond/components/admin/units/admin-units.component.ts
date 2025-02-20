@@ -1,101 +1,157 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SupabaseService } from '../../../../../services/supabase.service';
+import { UnitOffice } from '../../../../../models/unit-office.model';
 
 @Component({
   selector: 'app-admin-units',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Unit Management</h1>
-        <button class="btn-primary flex items-center space-x-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-          </svg>
-          <span>Add New Unit</span>
-        </button>
-      </div>
-
-      <!-- Unit List -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Head</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let unit of units">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{unit.name}}</div>
-                <div class="text-sm text-gray-500">{{unit.code}}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span class="text-sm font-medium text-gray-600">{{unit.head.charAt(0)}}</span>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{unit.head}}</div>
-                    <div class="text-sm text-gray-500">{{unit.headTitle}}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{unit.memberCount}} members</div>
-                <div class="text-sm text-gray-500">{{unit.activeMembers}} active</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                      [class]="unit.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                  {{unit.status}}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
-                <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                <button class="text-red-600 hover:text-red-900">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `
+  imports: [CommonModule, FormsModule],
+  templateUrl: './admin-units.component.html'
 })
-export class AdminUnitsComponent {
-  units = [
-    {
-      name: 'Finance Department',
-      code: 'FIN-001',
-      head: 'John Smith',
-      headTitle: 'Finance Director',
-      memberCount: 25,
-      activeMembers: 23,
-      status: 'active'
-    },
-    {
-      name: 'Human Resources',
-      code: 'HR-001',
-      head: 'Sarah Wilson',
-      headTitle: 'HR Manager',
-      memberCount: 15,
-      activeMembers: 15,
-      status: 'active'
-    },
-    {
-      name: 'Operations',
-      code: 'OPS-001',
-      head: 'Mike Johnson',
-      headTitle: 'Operations Director',
-      memberCount: 50,
-      activeMembers: 48,
-      status: 'active'
+export class AdminUnitsComponent implements OnInit {
+  units: UnitOffice[] = [];
+  filteredUnits: UnitOffice[] = [];
+  showModal = false;
+  showDeleteModal = false;
+  showSuccessAlert = false;
+  successMessage = '';
+  newUnit: UnitOffice = {
+    unit: '',
+    unit_office: ''
+  };
+  unitToDelete: UnitOffice | null = null;
+  
+  // Pagination properties
+  currentPage = 1;
+  pageSize = 10;
+  totalPages = 1;
+  
+  // Filter property
+  filterText = '';
+
+  constructor(private supabaseService: SupabaseService) {}
+
+  private showSuccess(message: string) {
+    this.successMessage = message;
+    this.showSuccessAlert = true;
+    setTimeout(() => {
+      this.showSuccessAlert = false;
+    }, 3000);
+  }
+
+  async ngOnInit() {
+    await this.loadUnits();
+  }
+
+  async loadUnits() {
+    try {
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_unit_office')
+        .select('*')
+        .is('deleted_at', null);
+
+      if (error) throw error;
+      this.units = data;
+      this.applyFilterAndPagination();
+    } catch (error) {
+      console.error('Error fetching units:', error);
     }
-  ];
-} 
+  }
+
+  applyFilterAndPagination() {
+    // Apply filter
+    let filtered = this.units;
+    if (this.filterText) {
+      const searchText = this.filterText.toLowerCase();
+      filtered = this.units.filter(unit =>
+        unit.unit.toLowerCase().includes(searchText) ||
+        unit.unit_office.toLowerCase().includes(searchText)
+      );
+    }
+
+    // Calculate total pages
+    this.totalPages = Math.ceil(filtered.length / this.pageSize);
+    
+    // Ensure current page is within bounds
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages || 1;
+    }
+
+    // Get paginated data
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    this.filteredUnits = filtered.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  onFilter() {
+    this.currentPage = 1; // Reset to first page when filtering
+    this.applyFilterAndPagination();
+  }
+
+  changePage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.applyFilterAndPagination();
+    }
+  }
+
+  async addUnit() {
+    try {
+      if (!this.newUnit.unit || !this.newUnit.unit_office) {
+        console.error('Unit and Unit Office are required');
+        return;
+      }
+
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_unit_office')
+        .insert([{
+          unit: this.newUnit.unit.trim(),
+          unit_office: this.newUnit.unit_office.trim()
+        }])
+        .select();
+
+      if (error) {
+        console.error('Database error:', error.message);
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        await this.loadUnits();
+        this.newUnit = { unit: '', unit_office: '' };
+        this.showModal = false;
+        this.showSuccess('Unit added successfully!');
+      } else {
+        console.error('No data returned after insert');
+      }
+    } catch (error) {
+      console.error('Error adding unit:', error);
+      // You might want to show an error message to the user here
+    }
+  }
+
+  showDeleteConfirmation(unit: UnitOffice) {
+    this.unitToDelete = unit;
+    this.showDeleteModal = true;
+  }
+
+  async confirmDelete() {
+    if (this.unitToDelete) {
+      try {
+        const { error } = await this.supabaseService.getClient()
+          .from('fbus_unit_office')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('unit', this.unitToDelete.unit);
+
+        if (error) throw error;
+
+        await this.loadUnits();
+        this.showDeleteModal = false;
+        this.unitToDelete = null;
+        this.showSuccess('Unit archived successfully!');
+      } catch (error) {
+        console.error('Error archiving unit:', error);
+      }
+    }
+  }
+}
