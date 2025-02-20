@@ -16,6 +16,11 @@
     overflow-x: hidden;
   }
 
+  /* Input styles */
+  input, select, textarea {
+    @apply text-gray-900;
+  }
+
   /* Video background styles */
   video {
     @apply opacity-75;
@@ -113,5 +118,29 @@ html {
   
   @media (prefers-reduced-motion: reduce) {
     scroll-behavior: auto;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 
+           transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg 
+           hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 
+           focus:ring-offset-2 transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
+           transition-colors duration-200 bg-white;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-6;
   }
 } 

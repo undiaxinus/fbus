@@ -12,8 +12,8 @@ export const routes: Routes = [
     component: LandingPageComponent
   },
   {
-    path: 'fidelity-bond/login',
-    loadComponent: () => import('./modules/fidelity-bond/pages/login/login.component').then(m => m.LoginComponent)
+    path: 'fidelity-bond',
+    loadChildren: () => import('./modules/fidelity-bond/fidelity-bond.module').then(m => m.FidelityBondModule)
   },
   {
     path: 'cmas/login',
