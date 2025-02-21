@@ -61,13 +61,13 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
-    LoginComponent
   ],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
     FormsModule,
     ReactiveFormsModule,
+    LoginComponent,
     AdminLayoutComponent,
     UserLayoutComponent,
     UserDashboardComponent,
