@@ -2,8 +2,8 @@
   <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg">
     <!-- Logo and Title -->
     <div class="text-center">
-      <img class="mx-auto h-20 w-20" src="assets/logo.png" alt="Logo">
-      <h2 class="mt-6 text-3xl font-bold text-gray-900">Fidelity Bond Login</h2>
+      <img class="mx-auto h-20 w-20" [src]="getSystemInfo().logo" [alt]="getSystemInfo().title">
+      <h2 class="mt-6 text-3xl font-bold text-gray-900">{{ getSystemInfo().title }}</h2>
       <p class="mt-2 text-sm text-gray-600">Enter your credentials to access your account</p>
     </div>
 

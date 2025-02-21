@@ -16,7 +16,7 @@ export const routes: Routes = [
     loadChildren: () => import('./modules/fidelity-bond/fidelity-bond.module').then(m => m.FidelityBondModule)
   },
   {
-    path: 'cmas/login',
-    loadComponent: () => import('./modules/cmas/pages/login/login.component').then(m => m.LoginComponent)
+    path: 'cmas',
+    loadChildren: () => import('./modules/cmas/cmas.module').then(m => m.CmasModule)
   }
 ];
