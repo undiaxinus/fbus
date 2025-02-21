@@ -215,4 +215,57 @@ export class AdminUnitsComponent implements OnInit {
       }
     }
   }
+  // Modal properties
+  showArchivedModal = false;
+  showRestoreModal = false;
+  archivedUnits: any[] = [];
+  unitToRestore: UnitOffice | null = null;
+
+  async showArchivedUnits() {
+    this.showArchivedModal = true;
+    await this.loadArchivedUnits();
+  }
+
+  async loadArchivedUnits() {
+    try {
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_unit_office')
+        .select('*, fbus_units!inner(*)')
+        .not('deleted_at', 'is', null);
+
+      if (error) throw error;
+      this.archivedUnits = data.map((item: any) => ({
+        ...item,
+        unit: item.fbus_units.units,
+        unit_office: item.unit_office
+      }));
+    } catch (error) {
+      console.error('Error fetching archived units:', error);
+    }
+  }
+
+  showRestoreConfirmation(unit: UnitOffice) {
+    this.unitToRestore = unit;
+    this.showRestoreModal = true;
+  }
+
+  async confirmRestore() {
+    if (!this.unitToRestore) return;
+
+    try {
+      const { error } = await this.supabaseService.getClient()
+        .from('fbus_unit_office')
+        .update({ deleted_at: null })
+        .eq('id', this.unitToRestore.id);
+
+      if (error) throw error;
+
+      this.showRestoreModal = false;
+      this.showSuccess('Unit restored successfully');
+      await this.loadUnits();
+      await this.loadArchivedUnits();
+    } catch (error) {
+      console.error('Error restoring unit:', error);
+    }
+  }
 }
