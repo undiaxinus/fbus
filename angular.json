@@ -21,8 +21,8 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
-                
-              "src/assets/finance.ico"
+              "src/favicon.ico",
+              "src/assets"
             ],
             "styles": [
               "src/styles.css"
@@ -85,8 +85,8 @@
             ],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
-             
-              "src/assets/finance.ico"
+              "src/favicon.ico",
+              "src/assets"
             ],
             "styles": [
               "src/styles.css"
