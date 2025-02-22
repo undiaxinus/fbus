@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
 
 interface User {
   username: string;
@@ -15,9 +16,14 @@ interface User {
 export class AuthService {
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser$: Observable<User | null>;
+  private isBrowser: boolean;
 
-  constructor(private router: Router) {
-    const currentUser = localStorage.getItem('currentUser');
+  constructor(
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+    const currentUser = this.isBrowser ? localStorage.getItem('currentUser') : null;
     this.currentUserSubject = new BehaviorSubject<User | null>(currentUser ? JSON.parse(currentUser) : null);
     this.currentUser$ = this.currentUserSubject.asObservable();
   }
@@ -27,17 +33,24 @@ export class AuthService {
   }
 
   login(user: User) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    if (this.isBrowser) {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+    }
     this.currentUserSubject.next(user);
   }
 
   logout() {
-    localStorage.removeItem('currentUser');
+    if (this.isBrowser) {
+      localStorage.removeItem('currentUser');
+    }
     this.currentUserSubject.next(null);
     this.router.navigate(['/cmas/login']);
   }
 
   getCurrentUser(): User | null {
+    if (!this.isBrowser) {
+      return null;
+    }
     const currentUser = localStorage.getItem('currentUser');
     return currentUser ? JSON.parse(currentUser) : null;
   }

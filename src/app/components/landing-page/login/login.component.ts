@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -81,21 +82,10 @@ export class LoginComponent implements OnInit {
   errorMessage: string = '';
   systemType: 'fidelity-bond' | 'cmas' = 'cmas';
 
-  // Dummy user data
-  private dummyUsers = [
-    { username: 'admin@gmail.com', password: 'admin123', role: 'fbus_admin', name: 'Admin User', system_role: 'fidelity-bond' },
-    { username: 'user@gmail.com', password: 'user123', role: 'fbus_user', name: 'John Doe', system_role: 'fidelity-bond' },
-    // CMAS Users
-    { username: 'duty_pnco@gmail.com', password: 'DutyPNCO@2024', role: 'duty_pnco', name: 'Duty PNCO', system_role: 'cmas' },
-    { username: 'section_personnel@gmail.com', password: 'SectionStaff@2024', role: 'section_personnel', name: 'Section Staff', system_role: 'cmas' },
-    { username: 'admin_personnel@gmail.com', password: 'AdminStaff@2024', role: 'cmas_admin', name: 'Admin Staff', system_role: 'cmas' },
-    { username: 'field_personnel@gmail.com', password: 'FieldStaff@2024', role: 'field_personnel', name: 'Field Staff', system_role: 'cmas' },
-    { username: 'supervisor_personel@gmail.com', password: 'SupervisorStaff@2024', role: 'supervisor', name: 'Supervisor', system_role: 'cmas' }
-  ];
-
   constructor(
     private router: Router,
     private fb: FormBuilder,
+    private userService: UserService,
     private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
@@ -105,54 +95,52 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Check if we're on the fidelity-bond login page
     this.systemType = this.router.url.includes('fidelity-bond') ? 'fidelity-bond' : 'cmas';
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.loginForm.valid) {
       const { username, password } = this.loginForm.value;
       
-      // Check credentials against dummy data
-      const user = this.dummyUsers.find(u => 
-        u.username === username && u.password === password && u.system_role === this.systemType
-      );
+      try {
+        const user = await this.userService.validateUser(username, password);
 
-      if (user) {
-        // Login through auth service
-        this.authService.login(user);
+        if (user && user.system_role === this.systemType) {
+          this.authService.login(user);
 
-        // Navigate based on system type and role
-        if (this.systemType === 'cmas') {
-          switch (user.role) {
-            case 'cmas_admin':
-              this.router.navigate(['/cmas/admin-personnel']);
-              break;
-            case 'duty_pnco':
-              this.router.navigate(['/cmas/duty-pnco']);
-              break;
-            case 'section_personnel':
-              this.router.navigate(['/cmas/section-personnel']);
-              break;
-            case 'field_personnel':
-              this.router.navigate(['/cmas/field-personnel']);
-              break;
-            case 'supervisor':
-              this.router.navigate(['/cmas/supervisor']);
-              break;
-            default:
-              this.router.navigate(['/cmas']);
+          if (this.systemType === 'cmas') {
+            switch (user.role) {
+              case 'cmas_admin':
+                this.router.navigate(['/cmas/admin-personnel']);
+                break;
+              case 'duty_pnco':
+                this.router.navigate(['/cmas/duty-pnco']);
+                break;
+              case 'section_personnel':
+                this.router.navigate(['/cmas/section-personnel']);
+                break;
+              case 'field_personnel':
+                this.router.navigate(['/cmas/field-personnel']);
+                break;
+              case 'supervisor':
+                this.router.navigate(['/cmas/supervisor']);
+                break;
+              default:
+                this.router.navigate(['/cmas']);
+            }
+          } else {
+            if (user.role === 'fbus_admin') {
+              this.router.navigate(['/fidelity-bond/admin']);
+            } else {
+              this.router.navigate(['/fidelity-bond/user']);
+            }
           }
         } else {
-          // Fidelity Bond System navigation
-          if (user.role === 'fbus_admin') {
-            this.router.navigate(['/fidelity-bond/admin']);
-          } else {
-            this.router.navigate(['/fidelity-bond/user']);
-          }
+          this.errorMessage = 'Invalid username or password';
         }
-      } else {
-        this.errorMessage = 'Invalid username or password';
+      } catch (error) {
+        console.error('Login error:', error);
+        this.errorMessage = 'An error occurred during login';
       }
     } else {
       this.errorMessage = 'Please fill in all required fields correctly';
