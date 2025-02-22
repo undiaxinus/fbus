@@ -5,112 +5,9 @@ import { UserService, User } from '../../../../../core/services/user.service';
 
 @Component({
   selector: 'app-admin-users',
+  templateUrl: './admin-users.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
-        <button (click)="showAddUserModal = true" class="btn-primary flex items-center space-x-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-          </svg>
-          <span>Add New User</span>
-        </button>
-      </div>
-
-      <!-- User List -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let user of users">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span class="text-sm font-medium text-gray-600">{{user.name.charAt(0)}}</span>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{user.name}}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{user.username}}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                      [ngClass]="getRoleClass(user.role)">
-                  {{user.role}}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Active
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button (click)="editUser(user)" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                <button (click)="deleteUser(user.id)" class="text-red-600 hover:text-red-900">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Add User Modal -->
-      <div *ngIf="showAddUserModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-          <div class="mt-3">
-            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New User</h3>
-            <form (ngSubmit)="addUser()">
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
-                <input type="text" [(ngModel)]="newUser.name" name="name"
-                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-              </div>
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                <input type="email" [(ngModel)]="newUser.username" name="username"
-                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-              </div>
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                <input type="password" [(ngModel)]="newUser.password" name="password"
-                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-              </div>
-              <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
-                <select [(ngModel)]="newUser.role" name="role"
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                  <option value="fbus_admin">Admin</option>
-                  <option value="fbus_user">User</option>
-                </select>
-              </div>
-              <div class="flex justify-end space-x-3">
-                <button type="button" (click)="showAddUserModal = false"
-                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
-                  Cancel
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  Add User
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  imports: [CommonModule, FormsModule]
 })
 export class AdminUsersComponent implements OnInit {
   users: User[] = [];
@@ -122,64 +19,156 @@ export class AdminUsersComponent implements OnInit {
     role: 'fbus_user',
     system_role: 'fidelity-bond'
   };
+  showEditModal = false;
+  editingUser: User = {
+    id: '',
+    name: '',
+    username: '',
+    password: '',
+    role: 'fbus_user',
+    system_role: 'fidelity-bond'
+  };
+  showPasswordFields = false;
+  newPassword = '';
+  confirmPassword = '';
+  passwordError = '';
+  successMessage = '';
+  errorMessage = '';
+  isLoading = false;
+  searchTerm = '';
+  currentPage = 1;
+  itemsPerPage = 10;
 
   constructor(private userService: UserService) {}
 
-  ngOnInit() {
-    this.loadUsers();
+  async ngOnInit() {
+    await this.loadUsers();
   }
 
-  loadUsers() {
-    this.userService.getUsers().subscribe(
-      users => {
+  async loadUsers() {
+    this.isLoading = true;
+    try {
+      const users = await this.userService.getUsers().toPromise();
+      if (users) {
         this.users = users.filter(user => user.system_role === 'fidelity-bond');
-      },
-      error => {
-        console.error('Error loading users:', error);
-        // Handle error (show notification, etc.)
       }
-    );
+    } catch (error) {
+      console.error('Error loading users:', error);
+      this.showError('Failed to load users');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  // Helper method to show success message
+  private showSuccess(message: string) {
+    this.successMessage = message;
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3000); // Hide after 3 seconds
+  }
+
+  // Helper method to show error message
+  private showError(message: string) {
+    this.errorMessage = message;
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 3000); // Hide after 3 seconds
   }
 
   async addUser() {
+    this.isLoading = true;
     try {
       const result = await this.userService.createUser(this.newUser);
       if (result) {
         this.showAddUserModal = false;
-        this.loadUsers();
+        await this.loadUsers();
         this.resetNewUser();
-        // Show success message
+        this.showSuccess('User created successfully');
       }
     } catch (error) {
       console.error('Error adding user:', error);
-      // Show error message
+      this.showError('Failed to create user');
+    } finally {
+      this.isLoading = false;
     }
   }
 
   async deleteUser(id: string) {
     if (confirm('Are you sure you want to delete this user?')) {
+      this.isLoading = true;
       try {
         const success = await this.userService.deleteUser(id);
         if (success) {
-          this.loadUsers();
-          // Show success message
+          await this.loadUsers();
+          this.showSuccess('User deleted successfully');
         }
       } catch (error) {
         console.error('Error deleting user:', error);
-        // Show error message
+        this.showError('Failed to delete user');
+      } finally {
+        this.isLoading = false;
       }
     }
   }
 
   editUser(user: User) {
-    // Implement edit functionality
-    console.log('Edit user:', user);
+    this.editingUser = { ...user };
+    this.showEditModal = true;
   }
 
-  getRoleClass(role: string): string {
-    return role === 'fbus_admin' 
-      ? 'bg-purple-100 text-purple-800' 
-      : 'bg-green-100 text-green-800';
+  togglePasswordChange() {
+    this.showPasswordFields = !this.showPasswordFields;
+    if (!this.showPasswordFields) {
+      this.newPassword = '';
+      this.confirmPassword = '';
+      this.passwordError = '';
+    }
+  }
+
+  async updateUser() {
+    this.isLoading = true;
+    try {
+      const { id } = this.editingUser;
+      const updates: any = {
+        name: this.editingUser.name,
+        username: this.editingUser.username,
+        role: this.editingUser.role,
+        system_role: this.editingUser.system_role
+      };
+
+      if (this.showPasswordFields) {
+        if (!this.newPassword || !this.confirmPassword) {
+          this.passwordError = 'Please fill in both password fields';
+          this.isLoading = false;
+          return;
+        }
+        if (this.newPassword !== this.confirmPassword) {
+          this.passwordError = 'Passwords do not match';
+          this.isLoading = false;
+          return;
+        }
+        if (this.newPassword.length < 6) {
+          this.passwordError = 'Password must be at least 6 characters long';
+          this.isLoading = false;
+          return;
+        }
+        updates.password = this.newPassword;
+      }
+
+      const success = await this.userService.updateUser(id, updates);
+      if (success) {
+        this.showEditModal = false;
+        await this.loadUsers();
+        this.resetPasswordFields();
+        this.showSuccess('User updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      this.showError('Failed to update user');
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   private resetNewUser() {
@@ -190,5 +179,60 @@ export class AdminUsersComponent implements OnInit {
       role: 'fbus_user',
       system_role: 'fidelity-bond'
     };
+  }
+
+  private resetPasswordFields() {
+    this.showPasswordFields = false;
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.passwordError = '';
+  }
+
+  getRoleClass(role: string): string {
+    return role === 'fbus_admin' 
+      ? 'bg-purple-100 text-purple-800' 
+      : 'bg-green-100 text-green-800';
+  }
+
+  get filteredUsers() {
+    return this.users.filter(user => {
+      const searchStr = this.searchTerm.toLowerCase();
+      return user.name.toLowerCase().includes(searchStr) ||
+             user.username.toLowerCase().includes(searchStr) ||
+             user.role.toLowerCase().includes(searchStr);
+    });
+  }
+
+  get totalPages() {
+    return Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+  }
+
+  get startIndex() {
+    return (this.currentPage - 1) * this.itemsPerPage;
+  }
+
+  get endIndex() {
+    const end = this.startIndex + this.itemsPerPage;
+    return Math.min(end, this.filteredUsers.length);
+  }
+
+  get paginatedUsers() {
+    return this.filteredUsers.slice(this.startIndex, this.endIndex);
+  }
+
+  onSearch() {
+    this.currentPage = 1; // Reset to first page when searching
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
   }
 } 
