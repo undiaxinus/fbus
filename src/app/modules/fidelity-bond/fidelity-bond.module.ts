@@ -31,7 +31,7 @@ const routes: Routes = [
       },
       { 
         path: 'bonds', 
-        loadComponent: () => import('./components/admin/bonds/admin-bonds.component').then(m => m.AdminBondsComponent)
+        loadComponent: () => import('./components/admin/bond-management/bond-management.component').then(m => m.BondManagementComponent)
       },
       { 
         path: 'units', 

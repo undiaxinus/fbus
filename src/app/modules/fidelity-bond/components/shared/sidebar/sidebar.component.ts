@@ -19,7 +19,13 @@ interface MenuItem {
       <div class="py-6 px-5">
         <div class="flex items-center gap-3">
           <div class="p-2 bg-white/10 rounded-lg">
-            <img src="assets/logo.png" alt="Logo" class="h-8 w-8">
+            <img src="assets/logo.png" 
+                 alt="Logo" 
+                 class="h-8 w-8"
+                 width="32"
+                 height="32"
+                 loading="eager"
+                 decoding="async">
           </div>
           <span class="text-xl font-bold text-white tracking-wide">Fidelity Bond</span>
         </div>

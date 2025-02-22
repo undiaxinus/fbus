@@ -55,6 +55,11 @@ export class AuthService {
 
         if (userError) throw userError;
 
+        // Update user's role in Supabase auth metadata
+        await this.supabase.auth.updateUser({
+          data: { role: userData.role }
+        });
+
         const user: User = {
           id: data.user.id,
           username: email,
@@ -75,25 +80,28 @@ export class AuthService {
     }
   }
 
-  async register(email: string, password: string): Promise<{ user: User | null; error: any }> {
+  async register(email: string, password: string, role: string = 'fbus_user'): Promise<{ user: User | null; error: any }> {
     try {
       // Register the user with Supabase Auth
       const { data, error } = await this.supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: { role }
+        }
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Create a record in the users table with default role
+        // Create a record in the users table with the specified role
         const { error: userError } = await this.supabase
           .from('users')
           .insert([
             {
               id: data.user.id,
               email: email,
-              role: 'user',
+              role: role,
               name: email.split('@')[0] // Default name from email
             }
           ]);
@@ -104,7 +112,7 @@ export class AuthService {
           user: {
             id: data.user.id,
             username: email,
-            role: 'user',
+            role: role,
             name: email.split('@')[0]
           },
           error: null

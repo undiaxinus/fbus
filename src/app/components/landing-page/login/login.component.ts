@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, User } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -81,16 +81,65 @@ export class LoginComponent implements OnInit {
   errorMessage: string = '';
   systemType: 'fidelity-bond' | 'cmas' = 'cmas';
 
-  // Dummy user data
+  // Updated dummy user data with required id field
   private dummyUsers = [
-    { username: 'admin@gmail.com', password: 'admin123', role: 'fbus_admin', name: 'Admin User', system_role: 'fidelity-bond' },
-    { username: 'user@gmail.com', password: 'user123', role: 'fbus_user', name: 'John Doe', system_role: 'fidelity-bond' },
+    { 
+      id: '1',
+      username: 'admin@gmail.com', 
+      password: 'admin123', 
+      role: 'fbus_admin', 
+      name: 'Admin User',
+      user_metadata: { system_role: 'fidelity-bond' }
+    },
+    { 
+      id: '2',
+      username: 'user@gmail.com', 
+      password: 'user123', 
+      role: 'fbus_user', 
+      name: 'John Doe',
+      user_metadata: { system_role: 'fidelity-bond' }
+    },
     // CMAS Users
-    { username: 'duty_pnco@gmail.com', password: 'DutyPNCO@2024', role: 'duty_pnco', name: 'Duty PNCO', system_role: 'cmas' },
-    { username: 'section_personnel@gmail.com', password: 'SectionStaff@2024', role: 'section_personnel', name: 'Section Staff', system_role: 'cmas' },
-    { username: 'admin_personnel@gmail.com', password: 'AdminStaff@2024', role: 'cmas_admin', name: 'Admin Staff', system_role: 'cmas' },
-    { username: 'field_personnel@gmail.com', password: 'FieldStaff@2024', role: 'field_personnel', name: 'Field Staff', system_role: 'cmas' },
-    { username: 'supervisor_personel@gmail.com', password: 'SupervisorStaff@2024', role: 'supervisor', name: 'Supervisor', system_role: 'cmas' }
+    { 
+      id: '3',
+      username: 'duty_pnco@gmail.com', 
+      password: 'DutyPNCO@2024', 
+      role: 'duty_pnco', 
+      name: 'Duty PNCO',
+      user_metadata: { system_role: 'cmas' }
+    },
+    { 
+      id: '4',
+      username: 'section_personnel@gmail.com', 
+      password: 'SectionStaff@2024', 
+      role: 'section_personnel', 
+      name: 'Section Staff',
+      user_metadata: { system_role: 'cmas' }
+    },
+    { 
+      id: '5',
+      username: 'admin_personnel@gmail.com', 
+      password: 'AdminStaff@2024', 
+      role: 'cmas_admin', 
+      name: 'Admin Staff',
+      user_metadata: { system_role: 'cmas' }
+    },
+    { 
+      id: '6',
+      username: 'field_personnel@gmail.com', 
+      password: 'FieldStaff@2024', 
+      role: 'field_personnel', 
+      name: 'Field Staff',
+      user_metadata: { system_role: 'cmas' }
+    },
+    { 
+      id: '7',
+      username: 'supervisor_personel@gmail.com', 
+      password: 'SupervisorStaff@2024', 
+      role: 'supervisor', 
+      name: 'Supervisor',
+      user_metadata: { system_role: 'cmas' }
+    }
   ];
 
   constructor(
@@ -114,11 +163,22 @@ export class LoginComponent implements OnInit {
       const { username, password } = this.loginForm.value;
       
       // Check credentials against dummy data
-      const user = this.dummyUsers.find(u => 
-        u.username === username && u.password === password && u.system_role === this.systemType
+      const dummyUser = this.dummyUsers.find(u => 
+        u.username === username && 
+        u.password === password && 
+        u.user_metadata.system_role === this.systemType
       );
 
-      if (user) {
+      if (dummyUser) {
+        // Create a proper User object for auth service
+        const user: User = {
+          id: dummyUser.id,
+          username: dummyUser.username,
+          role: dummyUser.role,
+          name: dummyUser.name,
+          user_metadata: dummyUser.user_metadata
+        };
+
         // Login through auth service
         this.authService.login(user);
 
