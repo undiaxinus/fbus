@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, AfterViewInit, inject, PLATFORM_ID } from '@angular/core';
+import { Component, ViewEncapsulation, AfterViewInit, inject, PLATFORM_ID, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -11,6 +11,7 @@ import { RouterModule } from '@angular/router';
 })
 export class LandingPageComponent implements AfterViewInit {
   private platformId = inject(PLATFORM_ID);
+  @ViewChild('solutionsSection') solutionsSection!: ElementRef;
 
   ngAfterViewInit() {
     if (isPlatformBrowser(this.platformId)) {
@@ -20,9 +21,16 @@ export class LandingPageComponent implements AfterViewInit {
 
   scrollToSolutions() {
     if (isPlatformBrowser(this.platformId)) {
-      const solutionsSection = document.getElementById('solutions-section');
-      if (solutionsSection) {
-        solutionsSection.scrollIntoView({ behavior: 'smooth' });
+      const solutionsElement = this.solutionsSection?.nativeElement;
+      if (solutionsElement) {
+        const offset = 80; // Offset to account for any fixed headers
+        const elementPosition = solutionsElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
       }
     }
   }
