@@ -27,7 +27,7 @@
           <a *ngFor="let item of section.items"
              [routerLink]="[item.route]"
              routerLinkActive="bg-blue-600 text-white"
-             [routerLinkActiveOptions]="{exact: item.route.endsWith('dashboard')}"
+             [routerLinkActiveOptions]="{exact: true}"
              class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200 group">
             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconPath(item.icon)"></path>
@@ -52,7 +52,7 @@
           <a *ngFor="let item of section.items"
              [routerLink]="[item.route]"
              routerLinkActive="bg-blue-600 text-white"
-             [routerLinkActiveOptions]="{exact: item.route.endsWith('dashboard')}"
+             [routerLinkActiveOptions]="{exact: true}"
              class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200 group">
             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconPath(item.icon)"></path>
