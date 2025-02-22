@@ -1,163 +1,300 @@
 <p>bond-management works!</p>
 
 <!-- Header -->
-<div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">Bond Management</h1>
-      <p class="mt-1 text-sm text-gray-500">Manage employee fidelity bonds and their status</p>
+<div class="px-4 sm:px-6 lg:px-8 py-8">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h1 class="text-2xl font-semibold text-gray-900">Bond Management</h1>
+      <p class="mt-2 text-sm text-gray-700">Manage employee fidelity bonds and their status</p>
     </div>
-    <div class="mt-4 md:mt-0">
-      <button (click)="showAddBondModal = true" 
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <button type="button" (click)="showAddBondModal = true"
+        class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto">
+        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
         </svg>
         Add New Bond
       </button>
     </div>
   </div>
-</div>
 
-<!-- Filters -->
-<div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <!-- Search -->
-    <div>
-      <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
-      <input type="text" 
-             [(ngModel)]="searchTerm"
-             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-             placeholder="Search by name or ID">
+  <!-- Error Alert -->
+  <div *ngIf="error" class="mt-4 rounded-md bg-red-50 p-4">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-red-800">Error</h3>
+        <div class="mt-2 text-sm text-red-700">
+          <p>{{error}}</p>
+        </div>
+      </div>
+      <div class="ml-auto pl-3">
+        <div class="-mx-1.5 -my-1.5">
+          <button type="button" (click)="error = null" class="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100">
+            <span class="sr-only">Dismiss</span>
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
-    <!-- Status Filter -->
+  </div>
+
+  <!-- Filters -->
+  <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
     <div>
-      <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-      <select [(ngModel)]="selectedStatus"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+      <label for="search" class="sr-only">Search</label>
+      <div class="relative rounded-md shadow-sm">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <input type="text" [(ngModel)]="searchTerm" name="search" id="search"
+          class="block w-full rounded-md border-gray-300 pl-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          placeholder="Search bonds...">
+      </div>
+    </div>
+
+    <div>
+      <select [(ngModel)]="selectedStatus" name="status"
+        class="block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
         <option value="all">All Statuses</option>
         <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
       </select>
     </div>
-    <!-- Department Filter -->
+
     <div>
-      <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
-      <select [(ngModel)]="selectedDepartment"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+      <select [(ngModel)]="selectedDepartment" name="department"
+        class="block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
         <option value="all">All Departments</option>
         <option *ngFor="let dept of departments" [value]="dept">{{dept}}</option>
       </select>
     </div>
   </div>
-</div>
 
-<!-- Bonds Table -->
-<div class="bg-white shadow-sm rounded-lg overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
-        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      <tr *ngFor="let bond of filteredBonds">
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="flex items-center">
-            <div class="h-10 w-10 flex-shrink-0">
-              <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                {{bond.employeeName.charAt(0)}}
-              </div>
-            </div>
-            <div class="ml-4">
-              <div class="text-sm font-medium text-gray-900">{{bond.employeeName}}</div>
-              <div class="text-sm text-gray-500">{{bond.employeeId}}</div>
-            </div>
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm text-gray-900">{{bond.department}}</div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm text-gray-900">{{formatCurrency(bond.amount)}}</div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + getStatusColor(bond.status)">
-            {{bond.status}}
-          </span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm text-gray-900">{{bond.expiryDate}}</div>
-          <div class="text-sm" [class]="getDaysUntilExpiry(bond.expiryDate) <= 30 ? 'text-red-600' : 'text-gray-500'">
-            {{getDaysUntilExpiry(bond.expiryDate)}} days left
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-          <button class="text-red-600 hover:text-red-900">Delete</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Table -->
+  <div class="mt-8 flex flex-col">
+    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">EMPLOYEE</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">UNIT/OFFICE</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RANK</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">DESIGNATION</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">MCA</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">BOND AMOUNT</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">PREMIUM</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RISK NO.</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">STATUS</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">EXPIRY</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                  <span class="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <!-- Loading State -->
+              <tr *ngIf="isLoading">
+                <td colspan="11" class="px-3 py-4 text-sm text-gray-500 text-center">
+                  <div class="flex justify-center items-center space-x-2">
+                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading bonds...</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- No Results -->
+              <tr *ngIf="!isLoading && !error && filteredBonds.length === 0">
+                <td colspan="11" class="px-3 py-4 text-sm text-gray-500 text-center">
+                  <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No bonds found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new bond.</p>
+                    <div class="mt-6">
+                      <button type="button" (click)="showAddBondModal = true"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Add New Bond
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Bond Rows -->
+              <tr *ngFor="let bond of filteredBonds" class="hover:bg-gray-50">
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                  {{bond.name}}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.unit_office}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.rank}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.designation}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.mca)}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.amount_of_bond)}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.bond_premium)}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.risk_no}}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <span [class]="'inline-flex rounded-full px-2 text-xs font-semibold leading-5 ' + getStatusColor(bond.status)">
+                    {{bond.status}}
+                  </span>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <span [class]="{'text-red-600': bond.days_remaining && bond.days_remaining < 30}">
+                    {{bond.days_remaining}} days
+                  </span>
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <button type="button" (click)="onEditBond(bond)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                  <button type="button" (click)="onDeleteBond(bond)" class="text-red-600 hover:text-red-900">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Add Bond Modal -->
-<div *ngIf="showAddBondModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Add New Bond</h3>
-        <form class="space-y-4">
-          <div class="grid grid-cols-1 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Employee Name</label>
-              <input type="text" name="employeeName"
-                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Employee ID</label>
-              <input type="text" name="employeeId"
-                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Department</label>
-              <select name="department"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                <option *ngFor="let dept of departments" [value]="dept">{{dept}}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Amount</label>
-              <input type="number" name="amount"
-                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Start Date</label>
-              <input type="date" name="startDate"
-                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
-              <input type="date" name="expiryDate"
-                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-            </div>
+<div *ngIf="showAddBondModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+        <div class="absolute right-0 top-0 pr-4 pt-4">
+          <button type="button" (click)="showAddBondModal = false"
+            class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <span class="sr-only">Close</span>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sm:flex sm:items-start">
+          <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+            <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">Add New Bond</h3>
+            <form (ngSubmit)="onSubmitBond(bondForm)" #bondForm="ngForm" class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label for="name" class="block text-sm font-medium text-gray-700">Employee Name</label>
+                <input type="text" name="name" id="name" [(ngModel)]="newBond.name" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="unit_office" class="block text-sm font-medium text-gray-700">Unit/Office</label>
+                <select name="unit_office" id="unit_office" [(ngModel)]="newBond.unit_office" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                  <option value="">Select Unit/Office</option>
+                  <option *ngFor="let dept of departments" [value]="dept">{{dept}}</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="rank" class="block text-sm font-medium text-gray-700">Rank</label>
+                <input type="text" name="rank" id="rank" [(ngModel)]="newBond.rank" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="designation" class="block text-sm font-medium text-gray-700">Designation</label>
+                <input type="text" name="designation" id="designation" [(ngModel)]="newBond.designation" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="mca" class="block text-sm font-medium text-gray-700">MCA</label>
+                <input type="number" name="mca" id="mca" [(ngModel)]="newBond.mca" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="amount_of_bond" class="block text-sm font-medium text-gray-700">Amount of Bond</label>
+                <input type="number" name="amount_of_bond" id="amount_of_bond" [(ngModel)]="newBond.amount_of_bond" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="bond_premium" class="block text-sm font-medium text-gray-700">Bond Premium</label>
+                <input type="number" name="bond_premium" id="bond_premium" [(ngModel)]="newBond.bond_premium" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="risk_no" class="block text-sm font-medium text-gray-700">Risk No.</label>
+                <input type="text" name="risk_no" id="risk_no" [(ngModel)]="newBond.risk_no" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="effectivity_date" class="block text-sm font-medium text-gray-700">Effectivity Date</label>
+                <input type="date" name="effectivity_date" id="effectivity_date" [(ngModel)]="newBond.effectivity_date" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div>
+                <label for="date_of_cancellation" class="block text-sm font-medium text-gray-700">Cancellation Date</label>
+                <input type="date" name="date_of_cancellation" id="date_of_cancellation" [(ngModel)]="newBond.date_of_cancellation"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status" id="status" [(ngModel)]="newBond.status" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                  <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="contact_no" class="block text-sm font-medium text-gray-700">Contact Number</label>
+                <input type="text" name="contact_no" id="contact_no" [(ngModel)]="newBond.contact_no"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="remark" class="block text-sm font-medium text-gray-700">Remarks</label>
+                <textarea name="remark" id="remark" rows="3" [(ngModel)]="newBond.remark"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+              </div>
+
+              <div class="sm:col-span-2 flex justify-end space-x-3">
+                <button type="button" (click)="showAddBondModal = false"
+                  class="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  Cancel
+                </button>
+                <button type="submit" [disabled]="!bondForm.valid || isSubmitting"
+                  class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg *ngIf="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Save Bond
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button type="button"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-          Add Bond
-        </button>
-        <button type="button" (click)="showAddBondModal = false"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-          Cancel
-        </button>
+        </div>
       </div>
     </div>
   </div>
