@@ -104,7 +104,7 @@ export class LoginComponent implements OnInit {
       };
     } else {
       return {
-        logo: '/assets/pnp-logo.png',
+        logo: '/assets/logo.png',
         title: 'CMAS Login'
       };
     }
