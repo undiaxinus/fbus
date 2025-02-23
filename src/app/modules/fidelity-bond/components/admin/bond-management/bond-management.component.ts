@@ -107,6 +107,9 @@ export class BondManagementComponent implements OnInit {
   showArchiveConfirmModal = false;
   bondToArchive: FbusBond | null = null;
 
+  showViewBondModal: boolean = false;
+  selectedBond: FbusBond | null = null;
+
   constructor(private supabase: SupabaseService) {}
 
   private getEmptyBond(): FbusBond {
@@ -476,5 +479,10 @@ export class BondManagementComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  onViewBond(bond: FbusBond) {
+    this.selectedBond = bond;
+    this.showViewBondModal = true;
   }
 }
