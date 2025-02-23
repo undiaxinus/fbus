@@ -14,53 +14,69 @@
     </div>
   </div>
 
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Unit Management</h1>
-    <div class="flex space-x-2">
-      <button (click)="showArchivedUnits()" class="btn-secondary flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-14 0l2-2m10 0l2-2"/>
-        </svg>
-        <span>View Archived Units</span>
-      </button>
-      <button (click)="showNewDesignationModal = true" class="btn-primary flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        <span>Designation</span>
-      </button>
-      <button (click)="showNewUnitModal = true" class="btn-primary flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        <span>Add New Unit</span>
-      </button>
-      <button (click)="showModal = true" class="btn-primary flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        <span>Add New Unit Office</span>
-      </button>
+  <!-- Header with improved background -->
+  <div class="bg-white p-8 rounded-xl shadow-md mb-8 border border-gray-100">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+      <div class="space-y-2">
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Unit Management</h1>
+        <p class="text-base text-gray-600">Manage organizational units and departments</p>
+      </div>
+      <div class="mt-6 md:mt-0 flex flex-wrap gap-3">
+        <button (click)="showArchivedUnits()" 
+                class="group inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+          <svg class="w-5 h-5 mr-2 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-14 0l2-2m10 0l2-2"/>
+          </svg>
+          Archived Units
+        </button>
+        <button (click)="showNewDesignationModal = true" 
+                class="group inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+          <svg class="w-5 h-5 mr-2 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+          Add Designation
+        </button>
+        <button (click)="showNewUnitModal = true" 
+                class="group inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+          <svg class="w-5 h-5 mr-2 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+          Add Unit
+        </button>
+        <button (click)="showModal = true" 
+                class="group inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+          <svg class="w-5 h-5 mr-2 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+          Add Unit Office
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Search Filter -->
-  <div class="mb-4">
+  <!-- Search Filter without container -->
+  <div class="relative mb-8">
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </div>
     <input
       type="text"
       [(ngModel)]="filterText"
       (input)="onFilter()"
-      placeholder="Search units..."
-      class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      placeholder="Search units by name, code, or office..."
+      class="pl-10 w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
     >
   </div>
 
-  <!-- Table -->
-  <div class="bg-white shadow-md rounded-lg overflow-hidden">
+  <!-- Table with improved visibility -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
-          <th (click)="sort('unit')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+          <th (click)="sort('unit')" 
+              class="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-200">
             <div class="flex items-center space-x-1">
               <span>Unit</span>
               <span *ngIf="sortField === 'unit'" class="text-gray-400">
@@ -73,7 +89,8 @@
               </span>
             </div>
           </th>
-          <th (click)="sort('unit_office')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+          <th (click)="sort('unit_office')" 
+              class="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors duration-200">
             <div class="flex items-center space-x-1">
               <span>Unit Office</span>
               <span *ngIf="sortField === 'unit_office'" class="text-gray-400">
@@ -86,100 +103,151 @@
               </span>
             </div>
           </th>
-          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          <th class="px-6 py-3.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
-        <tr *ngFor="let unit of filteredUnits">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{unit.unit}}</td>
+        <tr *ngFor="let unit of filteredUnits" class="hover:bg-gray-50 transition-colors duration-200">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="h-10 w-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                <span class="text-sm font-medium text-blue-600">{{unit.unit.substring(0, 2)}}</span>
+              </div>
+              <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">{{unit.unit}}</div>
+              </div>
+            </div>
+          </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{unit.unit_office}}</td>
           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <button (click)="showDeleteConfirmation(unit)" class="text-amber-600 hover:text-amber-900">
+            <button (click)="showDeleteConfirmation(unit)" 
+                    class="inline-flex items-center px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-14 0l2-2m10 0l2-2"/>
+              </svg>
               Archive
             </button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredUnits.length === 0">
+          <td colspan="3" class="px-6 py-10 text-center text-sm text-gray-500 bg-gray-50">
+            <div class="flex flex-col items-center justify-center">
+              <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p>No units found</p>
+            </div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Pagination -->
-  <div class="flex items-center justify-between mt-4 bg-white p-4 rounded-lg shadow">
-    <div class="text-sm text-gray-700 font-medium">
-      Showing page {{currentPage}} of {{totalPages}}
-    </div>
-    <div class="flex space-x-2">
+  <!-- Pagination with improved visibility -->
+  <div class="flex items-center justify-between mt-6 bg-white p-4 rounded-xl shadow-md border border-gray-100">
+    <div class="flex-1 flex justify-between sm:hidden">
       <button
         (click)="changePage(currentPage - 1)"
         [disabled]="currentPage === 1"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
         Previous
       </button>
       <button
         (click)="changePage(currentPage + 1)"
         [disabled]="currentPage === totalPages"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Next
-        <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
       </button>
+    </div>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700">
+          Showing page <span class="font-medium">{{currentPage}}</span> of <span class="font-medium">{{totalPages}}</span>
+        </p>
+      </div>
+      <div>
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+          <button
+            (click)="changePage(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            (click)="changePage(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </nav>
+      </div>
     </div>
   </div>
 
-  <!-- Add Unit Modal Office-->
-  <div *ngIf="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+  <!-- Add Unit Modal -->
+  <div *ngIf="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-xl rounded-xl bg-white">
+      <div class="absolute top-4 right-4">
+        <button (click)="showModal = false" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       <div class="mt-3">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Unit Office</h3>
-        <form (ngSubmit)="addUnit()" #unitForm="ngForm">
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="unit">
-              Unit Name
+        <h3 class="text-xl font-bold text-gray-900 mb-1">Add New Unit Office</h3>
+        <p class="text-sm text-gray-500 mb-6">Create a new office for an existing unit</p>
+        <form (ngSubmit)="addUnit()" #unitForm="ngForm" class="space-y-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2" for="unit">
+              Select Unit
             </label>
             <select
               id="unit"
               name="unit"
               [(ngModel)]="newUnit.unit"
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200"
               required
             >
               <option value="">Select a unit</option>
               <option *ngFor="let unit of availableUnits" [value]="unit.unit">{{unit.unit}}</option>
             </select>
           </div>
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="unit_office">
-              Unit Office
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2" for="unit_office">
+              Office Name
             </label>
             <input
               type="text"
               id="unit_office"
               name="unit_office"
               [(ngModel)]="newUnit.unit_office"
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              class="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all duration-200"
               required
             >
           </div>
-          <div class="flex justify-end space-x-2">
+          <div class="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               (click)="showModal = false"
-              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
               [disabled]="!unitForm.form.valid"
             >
-              Save
+              Create Office
             </button>
           </div>
         </form>
