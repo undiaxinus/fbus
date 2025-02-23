@@ -270,20 +270,15 @@ export class BondManagementComponent implements OnInit {
 
   async onSubmitBond(form: NgForm) {
     if (!form.valid) return;
-
+    
     this.isSubmitting = true;
-    this.error = null;
+    this.error = '';
 
     try {
-      // Calculate the initial status before submitting
-      const calculatedStatus = this.calculateBondStatus(this.newBond);
-      const bondData = {
-        ...this.newBond,
-        status: calculatedStatus
-      };
-      
       let response;
-      if (this.isEditMode && this.newBond.id) {
+      const bondData = { ...this.newBond };
+
+      if (this.isEditMode) {
         // Update existing bond
         response = await this.supabase.getClient()
           .from('fbus_list')
@@ -302,6 +297,19 @@ export class BondManagementComponent implements OnInit {
       if (error) throw error;
 
       if (data) {
+        // Log the activity in fbus_activities
+        const { error: activityError } = await this.supabase.getClient()
+          .from('fbus_activities')
+          .insert([{
+            action: this.isEditMode 
+              ? `Updated bond for ${bondData.first_name} ${bondData.last_name}`
+              : `Added new bond for ${bondData.first_name} ${bondData.last_name}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: new Date().toISOString()
+          }]);
+
+        if (activityError) throw activityError;
+
         // Update local state
         if (this.isEditMode) {
           const index = this.activeBonds.findIndex(b => b.id === this.newBond.id);
@@ -326,6 +334,27 @@ export class BondManagementComponent implements OnInit {
       this.error = error?.message || 'Failed to save bond. Please try again.';
     } finally {
       this.isSubmitting = false;
+    }
+  }
+
+  private async getCurrentUserName(): Promise<string> {
+    try {
+      const { data: sessionData, error: sessionError } = await this.supabase.getClient()
+        .from('users')
+        .select('name')
+        .limit(1)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      if (sessionData && sessionData.name) {
+        return sessionData.name;
+      }
+
+      return 'Unknown User';
+    } catch (error) {
+      console.error('Error getting user name:', error);
+      return 'Unknown User';
     }
   }
 
