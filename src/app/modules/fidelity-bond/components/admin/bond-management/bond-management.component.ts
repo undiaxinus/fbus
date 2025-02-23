@@ -481,6 +481,12 @@ export class BondManagementComponent implements OnInit {
     }
   }
 
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.selectedDepartment = 'all';
+  }
+
   onViewBond(bond: FbusBond) {
     this.selectedBond = bond;
     this.showViewBondModal = true;
