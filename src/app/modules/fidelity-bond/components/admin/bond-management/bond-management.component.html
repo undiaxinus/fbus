@@ -1,15 +1,13 @@
-<p>bond-management works!</p>
-
 <!-- Header -->
-<div class="px-4 sm:px-6 lg:px-8 py-8">
-  <div class="sm:flex sm:items-center">
+<div class="px-4 sm:px-6 lg:px-8 py-8 max-w-[98rem] mx-auto">
+  <div class="sm:flex sm:items-center sm:justify-between">
     <div class="sm:flex-auto">
-      <h1 class="text-2xl font-semibold text-gray-900">Bond Management</h1>
-      <p class="mt-2 text-sm text-gray-700">Manage employee fidelity bonds and their status</p>
+      <h1 class="text-3xl font-bold text-gray-900">Bond Management</h1>
+      <p class="mt-2 text-base text-gray-600">Manage employee fidelity bonds and their status</p>
     </div>
-    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+    <div class="mt-4 sm:mt-0 sm:flex-none">
       <button type="button" (click)="showAddBondModal = true"
-        class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto">
+        class="inline-flex items-center justify-center rounded-lg border border-transparent bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto">
         <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
         </svg>
@@ -19,7 +17,7 @@
   </div>
 
   <!-- Error Alert -->
-  <div *ngIf="error" class="mt-4 rounded-md bg-red-50 p-4">
+  <div *ngIf="error" class="mt-6 rounded-lg bg-red-50 p-4 border border-red-200">
     <div class="flex">
       <div class="flex-shrink-0">
         <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -35,22 +33,20 @@
         </div>
       </div>
       <div class="ml-auto pl-3">
-        <div class="-mx-1.5 -my-1.5">
-          <button type="button" (click)="error = null" class="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100">
-            <span class="sr-only">Dismiss</span>
-            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-            </svg>
-          </button>
-        </div>
+        <button type="button" (click)="error = null" class="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100 transition-colors duration-200">
+          <span class="sr-only">Dismiss</span>
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Filters -->
-  <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
     <div>
-      <label for="search" class="sr-only">Search</label>
+      <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
       <div class="relative rounded-md shadow-sm">
         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -58,22 +54,24 @@
           </svg>
         </div>
         <input type="text" [(ngModel)]="searchTerm" name="search" id="search"
-          class="block w-full rounded-md border-gray-300 pl-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          placeholder="Search bonds...">
+          class="block w-full rounded-lg border-gray-300 pl-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          placeholder="Search by name, unit, or risk no...">
       </div>
     </div>
 
     <div>
-      <select [(ngModel)]="selectedStatus" name="status"
-        class="block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+      <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+      <select [(ngModel)]="selectedStatus" name="status" id="status"
+        class="block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
         <option value="all">All Statuses</option>
         <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
       </select>
     </div>
 
     <div>
-      <select [(ngModel)]="selectedDepartment" name="department"
-        class="block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+      <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+      <select [(ngModel)]="selectedDepartment" name="department" id="department"
+        class="block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
         <option value="all">All Departments</option>
         <option *ngFor="let dept of departments" [value]="dept">{{dept}}</option>
       </select>
@@ -81,96 +79,101 @@
   </div>
 
   <!-- Table -->
-  <div class="mt-8 flex flex-col">
-    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-      <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-          <table class="min-w-full divide-y divide-gray-300">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">EMPLOYEE</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">UNIT/OFFICE</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RANK</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">DESIGNATION</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">MCA</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">BOND AMOUNT</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">PREMIUM</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RISK NO.</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">STATUS</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">EXPIRY DATE</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">DAYS REMAINING</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">ACTION</th>
-                
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
-              <!-- Loading State -->
-              <tr *ngIf="isLoading">
-                <td colspan="11" class="px-3 py-4 text-sm text-gray-500 text-center">
-                  <div class="flex justify-center items-center space-x-2">
-                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Loading bonds...</span>
-                  </div>
-                </td>
-              </tr>
+  <div class="mt-6">
+    <div class="bg-white shadow-sm ring-1 ring-black ring-opacity-5 rounded-lg">
+      <table class="w-full divide-y divide-gray-300 table-fixed">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[13%]">Name/Contact No.</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[9%]">Unit/Office</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[7%]">Rank</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[9%]">Designation</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[8%]">MCA</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[9%]">Bond Amt</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[8%]">Premium</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[8%]">Risk#</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[8%]">Status</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[9%]">Expiry</th>
+            <th scope="col" class="p-1.5 text-left text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[6%]">Days</th>
+            <th scope="col" class="p-1.5 text-center text-[10px] font-semibold text-gray-900 uppercase tracking-wider w-[6%]">Act</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          <!-- Loading State -->
+          <tr *ngIf="isLoading">
+            <td colspan="12" class="p-2 text-xs text-gray-500 text-center">
+              <div class="flex justify-center items-center space-x-2">
+                <svg class="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Loading...</span>
+              </div>
+            </td>
+          </tr>
 
-              <!-- No Results -->
-              <tr *ngIf="!isLoading && !error && filteredBonds.length === 0">
-                <td colspan="11" class="px-3 py-4 text-sm text-gray-500 text-center">
-                  <div class="text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No bonds found</h3>
-                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new bond.</p>
-                    <div class="mt-6">
-                      <button type="button" (click)="showAddBondModal = true"
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
-                        </svg>
-                        Add New Bond
-                      </button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
+          <!-- No Results -->
+          <tr *ngIf="!isLoading && !error && filteredBonds.length === 0">
+            <td colspan="12" class="p-2 text-xs text-gray-500 text-center">
+              <div class="text-center">
+                <svg class="mx-auto h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                <h3 class="mt-1 text-xs font-medium text-gray-900">No bonds found</h3>
+                <button type="button" (click)="showAddBondModal = true"
+                  class="mt-2 inline-flex items-center px-2 py-1 text-[10px] font-medium rounded border border-transparent text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <svg class="-ml-0.5 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                  </svg>
+                  Add New Bond
+                </button>
+              </div>
+            </td>
+          </tr>
 
-              <!-- Bond Rows -->
-              <tr *ngFor="let bond of filteredBonds" class="hover:bg-gray-50">
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                  {{bond.first_name}} {{bond.middle_name}} {{bond.last_name}}
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.unit_office}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.rank}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.designation}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.mca)}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.amount_of_bond)}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.bond_premium)}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.risk_no}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <span [class]="'inline-flex rounded-full px-2 text-xs font-semibold leading-5 ' + getStatusColor(bond)">
-                    {{calculateBondStatus(bond)}}
-                  </span>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.date_of_cancellation}}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <span [class]="{'text-red-600': bond.days_remaning && parseInt(bond.days_remaning) < 30}">
-                    {{bond.days_remaning}} days
-                  </span>
-                </td>
-                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                  <button type="button" (click)="onEditBond(bond)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                  <button type="button" (click)="onDeleteBond(bond)" class="text-red-600 hover:text-red-900">Delete</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <!-- Bond Rows -->
+          <tr *ngFor="let bond of filteredBonds" class="hover:bg-gray-50 transition-colors duration-150">
+            <td class="p-1.5 text-[10px]">
+              <div class="font-medium text-gray-900 truncate">{{bond.first_name}} {{bond.middle_name}} {{bond.last_name}}</div>
+              <div class="text-gray-500 text-[9px] truncate">{{bond.contact_no}}</div>
+            </td>
+            <td class="p-1.5 text-[10px] text-gray-500 truncate">{{bond.unit_office}}</td>
+            <td class="p-1.5 text-[10px] text-gray-500 truncate">{{bond.rank}}</td>
+            <td class="p-1.5 text-[10px] text-gray-500 truncate">{{bond.designation}}</td>
+            <td class="p-1.5 text-[10px] text-gray-500">{{formatCurrency(bond.mca)}}</td>
+            <td class="p-1.5 text-[10px] text-gray-500">{{formatCurrency(bond.amount_of_bond)}}</td>
+            <td class="p-1.5 text-[10px] text-gray-500">{{formatCurrency(bond.bond_premium)}}</td>
+            <td class="p-1.5 text-[10px] text-gray-500 truncate">{{bond.risk_no}}</td>
+            <td class="p-1.5 text-[10px]">
+              <span [class]="'inline-flex rounded px-1 text-[9px] font-medium leading-4 ' + getStatusColor(bond)">
+                {{calculateBondStatus(bond)}}
+              </span>
+            </td>
+            <td class="p-1.5 text-[10px] text-gray-500">{{bond.date_of_cancellation | date:'MM/dd/yy'}}</td>
+            <td class="p-1.5 text-[10px]">
+              <span [class]="'inline-flex rounded px-1 text-[9px] font-medium leading-4 ' + (bond.days_remaning && parseInt(bond.days_remaning) < 30 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')">
+                {{bond.days_remaning}}
+              </span>
+            </td>
+            <td class="p-1.5 text-[10px]">
+              <div class="flex items-center justify-center gap-0.5">
+                <button type="button" (click)="onEditBond(bond)" 
+                  class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button type="button" (click)="onDeleteBond(bond)" 
+                  class="text-red-600 hover:text-red-900 transition-colors duration-200">
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
