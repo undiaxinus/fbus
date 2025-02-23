@@ -14,6 +14,7 @@ export class AdminUnitsComponent implements OnInit {
   units: any[] = [];
   filteredUnits: any[] = [];
   showModal = false;
+  showNewUnitModal = false;
   showDeleteModal = false;
   showSuccessAlert = false;
   successMessage = '';
@@ -35,6 +36,10 @@ export class AdminUnitsComponent implements OnInit {
   sortDirection: 'asc' | 'desc' | null = null;
   // Available units for dropdown
   availableUnits: { unit: string }[] = [];
+
+  newUnitData = {
+    units: ''
+  };
 
   constructor(private supabaseService: SupabaseService) {}
 
@@ -266,6 +271,34 @@ export class AdminUnitsComponent implements OnInit {
       await this.loadArchivedUnits();
     } catch (error) {
       console.error('Error restoring unit:', error);
+    }
+  }
+
+  async addNewUnit() {
+    try {
+      if (!this.newUnitData.units.trim()) {
+        console.error('Unit name is required');
+        return;
+      }
+
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_units')
+        .insert([{
+          units: this.newUnitData.units.trim()
+        }])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        await this.loadAvailableUnits(); // Refresh the units list
+        this.newUnitData.units = ''; // Reset the form
+        this.showNewUnitModal = false;
+        this.showSuccess('Unit added successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding new unit:', error);
+      // You might want to show an error message to the user here
     }
   }
 }

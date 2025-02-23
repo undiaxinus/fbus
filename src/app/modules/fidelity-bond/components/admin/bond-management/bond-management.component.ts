@@ -1,164 +1,305 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { FidelityBond } from '../../../models/fidelity-bond.model';
-import { FidelityBondService } from '../../../services/fidelity-bond.service';
 import { SupabaseService } from '../../../../../services/supabase.service';
-import { Router } from '@angular/router';
+
+interface FbusBond {
+  id?: string;
+  rank: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string;
+  designation: string;
+  despic: string;
+  unit_office: string;
+  mca: string;
+  amount_of_bond: string;
+  bond_premium: string;
+  risk_no: string;
+  riskpic: string;
+  effective_date: string;
+  date_of_cancellation: string;
+  status: string;
+  days_remaning: string;
+  contact_no: string;
+  units: string;
+  profile: string;
+  remark: string;
+  dates?: string;
+}
 
 @Component({
   selector: 'app-bond-management',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './bond-management.component.html'
+  templateUrl: './bond-management.component.html',
+  styles: [`
+    @keyframes blink-warning {
+      0% { 
+        background-color: rgb(254, 243, 199);  /* yellow-100 */
+        color: rgb(146, 64, 14);  /* yellow-800 */
+      }
+      50% { 
+        background-color: rgb(255, 237, 213);  /* orange-100 */
+        color: rgb(194, 65, 12);  /* orange-800 */
+      }
+      100% { 
+        background-color: rgb(254, 243, 199);  /* yellow-100 */
+        color: rgb(146, 64, 14);  /* yellow-800 */
+      }
+    }
+    .blink-warning {
+      animation: blink-warning 1.5s ease-in-out infinite;
+    }
+  `]
 })
 export class BondManagementComponent implements OnInit {
-  bonds: FidelityBond[] = [];
+  bonds: FbusBond[] = [];
   searchTerm: string = '';
   selectedStatus: string = 'all';
   selectedDepartment: string = 'all';
   showAddBondModal: boolean = false;
-  newBond: Partial<FidelityBond> = {
-    status: 'Active'
-  };
+  newBond: FbusBond = this.getEmptyBond();
   isSubmitting: boolean = false;
   isLoading: boolean = false;
   error: string | null = null;
 
   departments: string[] = ['Finance', 'Treasury', 'Accounting', 'HR', 'Operations', 'IT'];
-  statuses: string[] = ['Active', 'Expiring Soon', 'Expired', 'Renewed'];
+  statuses: string[] = ['VALID', 'EXPIRE SOON', 'EXPIRED'];
 
-  constructor(
-    private bondService: FidelityBondService,
-    private supabase: SupabaseService,
-    private router: Router
-  ) {}
+  parseInt = Number.parseInt;
+
+  availableUnits: { units: string }[] = [];
+
+  ranks: string[] = [
+    'Pat',
+    'PCpl',
+    'PSSg',
+    'PMSg',
+    'PSMS',
+    'PCMS',
+    'PEMS',
+    'PLT',
+    'PCPT',
+    'PMAJ',
+    'PLTCOL',
+    'PCOL',
+    'PBGEN',
+    'PMGEN',
+    'PLTGEN',
+    'PGEN',
+    'NUP'
+  ];
+
+  constructor(private supabase: SupabaseService) {}
+
+  private getEmptyBond(): FbusBond {
+    return {
+      rank: '',
+      first_name: '',
+      last_name: '',
+      middle_name: '',
+      designation: '',
+      despic: '',
+      unit_office: '',
+      mca: '',
+      amount_of_bond: '',
+      bond_premium: '',
+      risk_no: '',
+      riskpic: '',
+      effective_date: '',
+      date_of_cancellation: '',
+      status: 'VALID',
+      days_remaning: '',
+      contact_no: '',
+      units: '',
+      profile: '',
+      remark: ''
+    };
+  }
 
   async ngOnInit() {
+    await this.loadUnits();
+    await this.loadBonds();
+  }
+
+  async loadUnits() {
     try {
-      const session = await this.supabase.getClient().auth.getSession();
-      if (!session.data.session) {
-        this.router.navigate(['/login']);
-        return;
-      }
-      this.loadBonds();
+      const { data, error } = await this.supabase.getClient()
+        .from('fbus_units')
+        .select('units')
+        .is('deleted_at', null);
+
+      if (error) throw error;
+      this.availableUnits = data || [];
     } catch (error) {
-      console.error('Error checking authentication:', error);
-      this.error = 'Error checking authentication status';
+      console.error('Error loading units:', error);
+      this.error = 'Failed to load units. Please try again.';
     }
   }
 
-  loadBonds() {
+  async loadBonds() {
     this.isLoading = true;
     this.error = null;
     
-    this.bondService.getBonds().subscribe({
-      next: (bonds) => {
-        this.bonds = this.processBonds(bonds);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading bonds:', error);
-        this.error = 'Failed to load bonds. Please try again.';
-        this.isLoading = false;
-      }
-    });
+    try {
+      const { data, error } = await this.supabase.getClient()
+        .from('fbus_list')
+        .select('*')
+        .order('dates', { ascending: false });
+
+      if (error) throw error;
+
+      this.bonds = data || [];
+      this.isLoading = false;
+    } catch (error) {
+      console.error('Error loading bonds:', error);
+      this.error = 'Failed to load bonds. Please try again.';
+      this.isLoading = false;
+    }
   }
 
-  private processBonds(bonds: FidelityBond[]): FidelityBond[] {
-    return bonds.map(bond => ({
-      ...bond,
-      days_remaining: bond.date_of_cancellation ? 
-        this.getDaysUntilExpiry(new Date(bond.date_of_cancellation)) : 
-        undefined
-    }));
-  }
-
-  get filteredBonds(): FidelityBond[] {
+  get filteredBonds(): FbusBond[] {
     return this.bonds.filter(bond => {
-      const searchTermLower = this.searchTerm.toLowerCase();
-      const matchesSearch = 
-        (bond.name?.toLowerCase().includes(searchTermLower) ?? false) ||
-        (bond.unit_office?.toLowerCase().includes(searchTermLower) ?? false) ||
-        (bond.designation?.toLowerCase().includes(searchTermLower) ?? false) ||
-        (bond.risk_no?.toLowerCase().includes(searchTermLower) ?? false);
-
-      const matchesStatus = this.selectedStatus === 'all' || bond.status === this.selectedStatus;
+      // Calculate the actual status for each bond
+      const currentStatus = this.calculateBondStatus(bond);
+      
+      // Apply filters
+      const matchesSearch = !this.searchTerm || 
+        bond.first_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.middle_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.last_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.unit_office.toLowerCase().includes(this.searchTerm.toLowerCase());
+      
+      const matchesStatus = this.selectedStatus === 'all' || currentStatus === this.selectedStatus;
       const matchesDepartment = this.selectedDepartment === 'all' || bond.unit_office === this.selectedDepartment;
 
       return matchesSearch && matchesStatus && matchesDepartment;
     });
   }
 
-  getStatusColor(status: string): string {
-    switch (status?.toLowerCase()) {
-      case 'active':
+  async onSubmitBond(form: NgForm) {
+    if (form.valid) {
+      try {
+        // Calculate the initial status before submitting
+        const calculatedStatus = this.calculateBondStatus(this.newBond);
+        const bondData = {
+          ...this.newBond,
+          status: calculatedStatus
+        };
+        
+        const { data, error } = await this.supabase.getClient()
+          .from('fbus_list')
+          .insert([bondData])
+          .select();
+
+        if (error) throw error;
+
+        if (data) {
+          const newBonds = data as FbusBond[];
+          this.bonds = [...newBonds, ...this.bonds];
+          this.showAddBondModal = false;
+          this.newBond = this.getEmptyBond();
+          form.resetForm();
+        }
+      } catch (error) {
+        console.error('Error creating bond:', error);
+        this.error = 'Failed to create bond. Please try again.';
+      }
+    }
+  }
+
+  async onDeleteBond(bond: FbusBond) {
+    if (confirm(`Are you sure you want to delete the bond for ${bond.first_name} ${bond.last_name}?`)) {
+      try {
+        const { error } = await this.supabase.getClient()
+          .from('fbus_list')
+          .delete()
+          .eq('id', bond.id);
+
+        if (error) throw error;
+
+        this.bonds = this.bonds.filter(b => b.id !== bond.id);
+      } catch (error) {
+        console.error('Error deleting bond:', error);
+        this.error = 'Failed to delete bond. Please try again.';
+      }
+    }
+  }
+
+  async onEditBond(bond: FbusBond) {
+    try {
+      this.newBond = { ...bond };
+      this.showAddBondModal = true;
+    } catch (error) {
+      console.error('Error editing bond:', error);
+      this.error = 'Failed to edit bond. Please try again.';
+    }
+  }
+
+  formatCurrency(amount: string): string {
+    const num = parseFloat(amount);
+    if (isNaN(num)) return '';
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP'
+    }).format(num);
+  }
+
+  calculateBondStatus(bond: FbusBond): string {
+    const today = new Date();
+    const expiry = new Date(bond.date_of_cancellation);
+    const effective = new Date(bond.effective_date);
+    
+    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (today < effective) {
+      return 'VALID';
+    } else if (daysUntilExpiry <= 0) {
+      return 'EXPIRED';
+    } else if (daysUntilExpiry <= 14) { // 2 weeks
+      return 'EXPIRE SOON';
+    } else {
+      return 'VALID';
+    }
+  }
+
+  getStatusColor(bond: FbusBond): string {
+    const status = this.calculateBondStatus(bond);
+    switch (status) {
+      case 'VALID':
         return 'bg-green-100 text-green-800';
-      case 'expiring soon':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'expired':
+      case 'EXPIRE SOON':
+        return 'blink-warning';
+      case 'EXPIRED':
         return 'bg-red-100 text-red-800';
-      case 'renewed':
-        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   }
 
-  formatCurrency(amount: number | null): string {
-    if (amount == null) return '';
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP'
-    }).format(amount);
-  }
+  onDateChange() {
+    if (this.newBond.effective_date && this.newBond.date_of_cancellation) {
+      const today = new Date();
+      const expiry = new Date(this.newBond.date_of_cancellation);
+      const effective = new Date(this.newBond.effective_date);
+      
+      // Calculate days until expiry
+      const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Set status based on date calculations
+      if (today < effective) {
+        this.newBond.status = 'VALID';
+      } else if (daysUntilExpiry <= 0) {
+        this.newBond.status = 'EXPIRED';
+      } else if (daysUntilExpiry <= 14) { // 2 weeks
+        this.newBond.status = 'EXPIRE SOON';
+      } else {
+        this.newBond.status = 'VALID';
+      }
 
-  getDaysUntilExpiry(date: Date): number {
-    const today = new Date();
-    const expiry = new Date(date);
-    const diffTime = expiry.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  }
-
-  onSubmitBond(form: NgForm) {
-    if (form.valid && !this.isSubmitting) {
-      this.isSubmitting = true;
-      console.log('Submitting bond data:', this.newBond);
-
-      this.bondService.createBond(this.newBond as Omit<FidelityBond, 'id' | 'created_at' | 'updated_at'>).subscribe({
-        next: (createdBond) => {
-          console.log('Bond created successfully:', createdBond);
-          this.bonds = [createdBond, ...this.bonds];
-          this.showAddBondModal = false;
-          this.newBond = { status: 'Active' };
-          this.isSubmitting = false;
-          form.resetForm();
-        },
-        error: (error) => {
-          console.error('Error creating bond:', error);
-          this.error = 'Failed to create bond. Please try again.';
-          this.isSubmitting = false;
-        }
-      });
-    }
-  }
-
-  onEditBond(bond: FidelityBond) {
-    // TODO: Implement edit functionality
-    console.log('Editing bond:', bond);
-  }
-
-  onDeleteBond(bond: FidelityBond) {
-    if (confirm(`Are you sure you want to delete the bond for ${bond.name}?`)) {
-      this.bondService.deleteBond(bond.id!).subscribe({
-        next: () => {
-          this.bonds = this.bonds.filter(b => b.id !== bond.id);
-        },
-        error: (error) => {
-          console.error('Error deleting bond:', error);
-          this.error = 'Failed to delete bond. Please try again.';
-        }
-      });
+      // Update days remaining
+      this.newBond.days_remaning = daysUntilExpiry.toString();
     }
   }
 }

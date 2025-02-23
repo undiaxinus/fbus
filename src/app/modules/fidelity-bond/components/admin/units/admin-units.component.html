@@ -23,11 +23,17 @@
         </svg>
         <span>View Archived Units</span>
       </button>
-      <button (click)="showModal = true" class="btn-primary flex items-center space-x-2">
+      <button (click)="showNewUnitModal = true" class="btn-primary flex items-center space-x-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
         </svg>
         <span>Add New Unit</span>
+      </button>
+      <button (click)="showModal = true" class="btn-primary flex items-center space-x-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        <span>Add New Unit Office</span>
       </button>
     </div>
   </div>
@@ -120,11 +126,11 @@
     </div>
   </div>
 
-  <!-- Add Unit Modal -->
+  <!-- Add Unit Modal Office-->
   <div *ngIf="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
       <div class="mt-3">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Unit</h3>
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Unit Office</h3>
         <form (ngSubmit)="addUnit()" #unitForm="ngForm">
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2" for="unit">
@@ -276,6 +282,55 @@
             Restore
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Unit Modal -->
+  <div *ngIf="showNewUnitModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium leading-6 text-gray-900">Add New Unit</h3>
+          <button (click)="showNewUnitModal = false" class="text-gray-400 hover:text-gray-500">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <form (ngSubmit)="addNewUnit()" #newUnitForm="ngForm">
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="unitName">
+              Unit Name
+            </label>
+            <input
+              type="text"
+              id="unitName"
+              name="unitName"
+              [(ngModel)]="newUnitData.units"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              required
+            >
+          </div>
+
+          <div class="flex justify-end space-x-2 mt-6">
+            <button
+              type="button"
+              (click)="showNewUnitModal = false"
+              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="!newUnitForm.form.valid"
+              class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

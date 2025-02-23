@@ -97,10 +97,10 @@
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">PREMIUM</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RISK NO.</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">STATUS</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">EXPIRY</th>
-                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                  <span class="sr-only">Actions</span>
-                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">EXPIRY DATE</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">DAYS REMAINING</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">ACTION</th>
+                
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
@@ -142,7 +142,7 @@
               <!-- Bond Rows -->
               <tr *ngFor="let bond of filteredBonds" class="hover:bg-gray-50">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                  {{bond.name}}
+                  {{bond.first_name}} {{bond.middle_name}} {{bond.last_name}}
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.unit_office}}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.rank}}</td>
@@ -152,13 +152,14 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{formatCurrency(bond.bond_premium)}}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.risk_no}}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <span [class]="'inline-flex rounded-full px-2 text-xs font-semibold leading-5 ' + getStatusColor(bond.status)">
-                    {{bond.status}}
+                  <span [class]="'inline-flex rounded-full px-2 text-xs font-semibold leading-5 ' + getStatusColor(bond)">
+                    {{calculateBondStatus(bond)}}
                   </span>
                 </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{bond.date_of_cancellation}}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <span [class]="{'text-red-600': bond.days_remaining && bond.days_remaining < 30}">
-                    {{bond.days_remaining}} days
+                  <span [class]="{'text-red-600': bond.days_remaning && parseInt(bond.days_remaning) < 30}">
+                    {{bond.days_remaning}} days
                   </span>
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
@@ -196,8 +197,20 @@
             <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">Add New Bond</h3>
             <form (ngSubmit)="onSubmitBond(bondForm)" #bondForm="ngForm" class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
               <div class="sm:col-span-2">
-                <label for="name" class="block text-sm font-medium text-gray-700">Employee Name</label>
-                <input type="text" name="name" id="name" [(ngModel)]="newBond.name" required
+                <label for="first_name" class="block text-sm font-medium text-gray-700">First Name</label>
+                <input type="text" name="first_name" id="first_name" [(ngModel)]="newBond.first_name" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="middle_name" class="block text-sm font-medium text-gray-700">Middle Name</label>
+                <input type="text" name="middle_name" id="middle_name" [(ngModel)]="newBond.middle_name" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
+                <input type="text" name="last_name" id="last_name" [(ngModel)]="newBond.last_name" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
               </div>
 
@@ -206,14 +219,17 @@
                 <select name="unit_office" id="unit_office" [(ngModel)]="newBond.unit_office" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                   <option value="">Select Unit/Office</option>
-                  <option *ngFor="let dept of departments" [value]="dept">{{dept}}</option>
+                  <option *ngFor="let unit of availableUnits" [value]="unit.units">{{unit.units}}</option>
                 </select>
               </div>
 
               <div>
                 <label for="rank" class="block text-sm font-medium text-gray-700">Rank</label>
-                <input type="text" name="rank" id="rank" [(ngModel)]="newBond.rank" required
+                <select name="rank" id="rank" [(ngModel)]="newBond.rank" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                  <option value="">Select Rank</option>
+                  <option *ngFor="let rank of ranks" [value]="rank">{{rank}}</option>
+                </select>
               </div>
 
               <div class="sm:col-span-2">
@@ -247,23 +263,24 @@
               </div>
 
               <div>
-                <label for="effectivity_date" class="block text-sm font-medium text-gray-700">Effectivity Date</label>
-                <input type="date" name="effectivity_date" id="effectivity_date" [(ngModel)]="newBond.effectivity_date" required
+                <label for="effective_date" class="block text-sm font-medium text-gray-700">Effective Date</label>
+                <input type="date" name="effective_date" id="effective_date" [(ngModel)]="newBond.effective_date" (ngModelChange)="onDateChange()" required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
               </div>
 
               <div>
-                <label for="date_of_cancellation" class="block text-sm font-medium text-gray-700">Cancellation Date</label>
-                <input type="date" name="date_of_cancellation" id="date_of_cancellation" [(ngModel)]="newBond.date_of_cancellation"
+                <label for="date_of_cancellation" class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                <input type="date" name="date_of_cancellation" id="date_of_cancellation" [(ngModel)]="newBond.date_of_cancellation" (ngModelChange)="onDateChange()"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
               </div>
 
               <div class="sm:col-span-2">
-                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" id="status" [(ngModel)]="newBond.status" required
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                  <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700">Status</label>
+                <div class="mt-1 p-2 bg-gray-50 rounded-md border border-gray-300">
+                  <span [class]="'inline-flex rounded-full px-2 text-xs font-semibold leading-5 ' + getStatusColor(newBond)">
+                    {{calculateBondStatus(newBond)}}
+                  </span>
+                </div>
               </div>
 
               <div class="sm:col-span-2">
