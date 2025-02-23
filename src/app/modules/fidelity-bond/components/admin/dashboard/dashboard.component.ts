@@ -43,29 +43,7 @@ export class AdminDashboardComponent implements OnInit {
 
   activeRate: string = '0.0%';
 
-  recentActivities = [
-    {
-      action: 'New bond created',
-      user: 'John Doe',
-      time: '2 hours ago',
-      status: 'success',
-      amount: '₱50,000'
-    },
-    {
-      action: 'Bond renewed',
-      user: 'Jane Smith',
-      time: '4 hours ago',
-      status: 'info',
-      amount: '₱75,000'
-    },
-    {
-      action: 'Bond expired',
-      user: 'Mike Johnson',
-      time: '6 hours ago',
-      status: 'danger',
-      amount: '₱25,000'
-    }
-  ];
+  recentActivities: any[] = [];
 
   upcomingExpirations: any[] = [];
 
@@ -77,9 +55,13 @@ export class AdminDashboardComponent implements OnInit {
   showExpiringModal = false;
   allExpiringBonds: any[] = [];
 
+  showActivitiesModal = false;
+  allActivities: any[] = [];
+
   ngOnInit() {
     this.loadStats();
     this.loadUpcomingExpirations();
+    this.loadRecentActivities();
   }
 
   async loadStats() {
@@ -167,6 +149,57 @@ export class AdminDashboardComponent implements OnInit {
     } catch (error) {
       console.error('Error loading upcoming expirations:', error);
     }
+  }
+
+  async loadRecentActivities() {
+    try {
+      const { data, error } = await this.supabase.client
+        .from('fbus_activities')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3); // Get only the 3 most recent activities
+
+      if (error) throw error;
+
+      if (data) {
+        this.recentActivities = data.map(activity => ({
+          action: activity.action,
+          user: activity.user_name,
+          time: this.formatTimeAgo(new Date(activity.created_at)),
+          status: this.getActivityStatus(activity.action),
+          amount: this.formatAmount(activity.amount || 0)
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading recent activities:', error);
+      // Set default activities in case of error
+      this.recentActivities = [];
+    }
+  }
+
+  getActivityStatus(action: string): string {
+    // Define status based on action type
+    switch (action.toLowerCase()) {
+      case 'new bond created':
+        return 'success';
+      case 'bond renewed':
+        return 'info';
+      case 'bond expired':
+        return 'danger';
+      default:
+        return 'info';
+    }
+  }
+
+  formatTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return new Date(date).toLocaleDateString('en-PH');
   }
 
   formatAmount(amount: number): string {
@@ -272,5 +305,37 @@ export class AdminDashboardComponent implements OnInit {
 
   closeExpiringModal() {
     this.showExpiringModal = false;
+  }
+
+  async loadAllActivities() {
+    try {
+      const { data, error } = await this.supabase.client
+        .from('fbus_activities')  // Assuming you have an activities table
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        this.allActivities = data.map(activity => ({
+          action: activity.action,
+          user: activity.user_name,
+          time: this.formatTimeAgo(new Date(activity.created_at)),
+          status: activity.status,
+          amount: this.formatAmount(activity.amount || 0)
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    }
+  }
+
+  openActivitiesModal() {
+    this.loadAllActivities();
+    this.showActivitiesModal = true;
+  }
+
+  closeActivitiesModal() {
+    this.showActivitiesModal = false;
   }
 }

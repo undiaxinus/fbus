@@ -86,7 +86,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-lg font-semibold text-gray-900">Recent Activities</h2>
-          <button class="text-sm text-blue-600 hover:text-blue-700">View all</button>
+          <button (click)="openActivitiesModal()" class="text-sm text-blue-600 hover:text-blue-700">View all</button>
         </div>
         <div class="space-y-4">
           <div *ngFor="let activity of recentActivities" 
@@ -101,7 +101,7 @@
             <div class="ml-4 flex-1">
               <div class="flex items-center justify-between">
                 <p class="text-sm font-medium text-gray-900">{{activity.action}}</p>
-                <span class="text-sm font-medium" [class]="getStatusColor(activity.status)">{{activity.amount}}</span>
+                <!-- <span class="text-sm font-medium" [class]="getStatusColor(activity.status)">{{activity.amount}}</span> -->
               </div>
               <div class="flex items-center mt-1">
                 <p class="text-sm text-gray-500">{{activity.user}}</p>
@@ -210,6 +210,44 @@
             <span class="text-gray-600">{{bond.expiryDate}}</span>
           </div>
           <span class="font-medium text-gray-900">{{bond.amount}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add the Activities Modal -->
+<div *ngIf="showActivitiesModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-semibold text-gray-900">All Recent Activities</h3>
+      <button (click)="closeActivitiesModal()" class="text-gray-400 hover:text-gray-500">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    
+    <div class="mt-4 space-y-4 max-h-[70vh] overflow-y-auto">
+      <div *ngFor="let activity of allActivities" 
+           class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <div class="flex-shrink-0">
+          <div [class]="'p-2 rounded-full ' + (activity.status === 'success' ? 'bg-green-100' : activity.status === 'danger' ? 'bg-red-100' : 'bg-blue-100')">
+            <svg class="w-5 h-5" [class]="getStatusColor(activity.status)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ml-4 flex-1">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-900">{{activity.action}}</p>
+            <!-- <span class="text-sm font-medium" [class]="getStatusColor(activity.status)">{{activity.amount}}</span> -->
+          </div>
+          <div class="flex items-center mt-1">
+            <p class="text-sm text-gray-500">{{activity.user}}</p>
+            <span class="mx-2 text-gray-300">•</span>
+            <p class="text-sm text-gray-500">{{activity.time}}</p>
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService } from '../../../../../services/supabase.service';
+import { SupabaseService } from '../../../../../core/services/supabase.service';
 import { UnitOffice } from '../../../../../models/unit-office.model';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-admin-units',
@@ -48,7 +49,7 @@ export class AdminUnitsComponent implements OnInit {
 
   designations: any[] = [];
 
-  constructor(private supabaseService: SupabaseService) {}
+  private supabase = inject(SupabaseService);
 
   private showSuccess(message: string) {
     this.successMessage = message;
@@ -66,7 +67,7 @@ export class AdminUnitsComponent implements OnInit {
 
   async loadAvailableUnits() {
     try {
-      const { data, error } = await this.supabaseService.getClient()
+      const { data, error } = await this.supabase.client
         .from('fbus_units')
         .select('units')
         .is('deleted_at', null);
@@ -82,7 +83,7 @@ export class AdminUnitsComponent implements OnInit {
 
   async loadUnits() {
     try {
-      const { data, error } = await this.supabaseService.getClient()
+      const { data, error } = await this.supabase.client
         .from('fbus_unit_office')
         .select('*, fbus_units!inner(*)')
         .is('deleted_at', null);
@@ -165,7 +166,7 @@ export class AdminUnitsComponent implements OnInit {
       }
 
       // First, create the unit in fbus_units table
-      const { data: unitData, error: unitError } = await this.supabaseService.getClient()
+      const { data: unitData, error: unitError } = await this.supabase.client
         .from('fbus_units')
         .insert([{
           units: this.newUnit.unit.trim()
@@ -175,7 +176,7 @@ export class AdminUnitsComponent implements OnInit {
       if (unitError) throw unitError;
 
       // Then create the unit office with the reference to the unit
-      const { data, error } = await this.supabaseService.getClient()
+      const { data, error } = await this.supabase.client
         .from('fbus_unit_office')
         .insert([{
           unit: unitData[0].id,
@@ -189,16 +190,27 @@ export class AdminUnitsComponent implements OnInit {
       }
 
       if (data && data.length > 0) {
+        // Log the activity in fbus_activities
+        const { error: activityError } = await this.supabase.client
+          .from('fbus_activities')
+          .insert([{
+            action: `Added new unit office: ${this.newUnit.unit_office.trim()} under ${this.newUnit.unit}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: new Date().toISOString()
+          }]);
+
+        if (activityError) throw activityError;
+
         await this.loadUnits();
         this.newUnit = { unit: '', unit_office: '' };
         this.showModal = false;
-        this.showSuccess('Unit added successfully!');
+        this.showSuccess('Unit office added successfully!');
       } else {
         console.error('No data returned after insert');
       }
     } catch (error) {
       console.error('Error adding unit:', error);
-      // You might want to show an error message to the user here
+      this.showError('Failed to add unit office');
     }
   }
 
@@ -211,7 +223,7 @@ export class AdminUnitsComponent implements OnInit {
     if (this.unitToDelete) {
       try {
         const timestamp = new Date().toISOString();
-        const { error } = await this.supabaseService.getClient()
+        const { error } = await this.supabase.client
           .from('fbus_unit_office')
           .update({ deleted_at: timestamp })
           .eq('id', this.unitToDelete.id)
@@ -241,7 +253,7 @@ export class AdminUnitsComponent implements OnInit {
 
   async loadArchivedUnits() {
     try {
-      const { data, error } = await this.supabaseService.getClient()
+      const { data, error } = await this.supabase.client
         .from('fbus_unit_office')
         .select('*, fbus_units!inner(*)')
         .not('deleted_at', 'is', null);
@@ -263,22 +275,43 @@ export class AdminUnitsComponent implements OnInit {
   }
 
   async confirmRestore() {
-    if (!this.unitToRestore) return;
-
     try {
-      const { error } = await this.supabaseService.getClient()
-        .from('fbus_unit_office')
+      if (!this.unitToRestore) {
+        console.error('No unit selected for restore');
+        return;
+      }
+
+      // Restore the unit by setting deleted_at to null
+      const { data, error } = await this.supabase.client
+        .from('fbus_units')
         .update({ deleted_at: null })
-        .eq('id', this.unitToRestore.id);
+        .eq('id', this.unitToRestore.id)
+        .select();
 
       if (error) throw error;
 
-      this.showRestoreModal = false;
-      this.showSuccess('Unit restored successfully');
-      await this.loadUnits();
-      await this.loadArchivedUnits();
+      if (data) {
+        // Log the activity in fbus_activities
+        const { error: activityError } = await this.supabase.client
+          .from('fbus_activities')
+          .insert([{
+            action: `Restored unit: ${this.unitToRestore.units}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: new Date().toISOString()
+          }]);
+
+        if (activityError) throw activityError;
+
+        // Reset and refresh
+        this.showRestoreModal = false;
+        this.unitToRestore = null;
+        await this.loadAvailableUnits();
+        await this.loadArchivedUnits();
+        this.showSuccess('Unit restored successfully');
+      }
     } catch (error) {
       console.error('Error restoring unit:', error);
+      this.showError('Failed to restore unit');
     }
   }
 
@@ -289,7 +322,7 @@ export class AdminUnitsComponent implements OnInit {
         return;
       }
 
-      const { data, error } = await this.supabaseService.getClient()
+      const { data, error } = await this.supabase.client
         .from('fbus_units')
         .insert([{
           units: this.newUnitData.units.trim()
@@ -299,6 +332,17 @@ export class AdminUnitsComponent implements OnInit {
       if (error) throw error;
 
       if (data) {
+        // Log the activity in fbus_activities
+        const { error: activityError } = await this.supabase.client
+          .from('fbus_activities')
+          .insert([{
+            action: `Added new unit: ${this.newUnitData.units.trim()}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: new Date().toISOString()
+          }]);
+
+        if (activityError) throw activityError;
+
         await this.loadAvailableUnits(); // Refresh the units list
         this.newUnitData.units = ''; // Reset the form
         this.showNewUnitModal = false;
@@ -306,41 +350,77 @@ export class AdminUnitsComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error adding new unit:', error);
-      // You might want to show an error message to the user here
+      this.showError('Failed to add unit');
     }
   }
 
   async addNewDesignation() {
     try {
-      if (!this.newDesignation.designation.trim()) {
-        console.error('Designation name is required');
-        return;
-      }
-
-      const { data, error } = await this.supabaseService.getClient()
+      // First insert the new designation
+      const { data, error } = await this.supabase.client
         .from('fbus_designation')
-        .insert([{
-          designation: this.newDesignation.designation.trim()
-        }])
-        .select();
+        .insert([
+          { designation: this.newDesignation.designation }
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
 
       if (data) {
-        await this.loadDesignations(); // Add this method to refresh designations
-        this.newDesignation.designation = ''; // Reset the form
+        // Log the activity in fbus_activities with correct schema
+        const { error: activityError } = await this.supabase.client
+          .from('fbus_activities')
+          .insert([{
+            action: `Added new designation: ${this.newDesignation.designation}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: new Date().toISOString()
+          }]);
+
+        if (activityError) throw activityError;
+
+        // Reset form and close modal
+        this.newDesignation = { designation: '' };
         this.showNewDesignationModal = false;
-        this.showSuccess('Designation added successfully!');
+        await this.loadDesignations();
+        this.showSuccess('Designation added successfully');
       }
     } catch (error) {
-      console.error('Error adding new designation:', error);
-      // Handle error appropriately
+      console.error('Error adding designation:', error);
+      this.showError('Failed to add designation');
+    }
+  }
+
+  // Add this method for error messages
+  private showError(message: string) {
+    alert(message); // You can enhance this later with a proper error notification system
+  }
+
+  // Helper method to get current user's name
+  private async getCurrentUserName(): Promise<string> {
+    try {
+      const { data: sessionData, error: sessionError } = await this.supabase.client
+        .from('users')
+        .select('name')
+        .limit(1)  // Add limit to get only one user
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      if (sessionData && sessionData.name) {
+        return sessionData.name;
+      }
+
+      return 'Unknown User';
+    } catch (error) {
+      console.error('Error getting user name:', error);
+      return 'Unknown User';
     }
   }
 
   async loadDesignations() {
     try {
-      const { data, error } = await this.supabaseService.getClient()
+      const { data, error } = await this.supabase.client
         .from('fbus_designation')
         .select('*')
         .order('designation', { ascending: true });
@@ -352,7 +432,8 @@ export class AdminUnitsComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error loading designations:', error);
-      // Handle error appropriately
     }
   }
+
+
 }
