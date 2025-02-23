@@ -41,6 +41,13 @@ export class AdminUnitsComponent implements OnInit {
     units: ''
   };
 
+  showNewDesignationModal = false;
+  newDesignation = {
+    designation: ''
+  };
+
+  designations: any[] = [];
+
   constructor(private supabaseService: SupabaseService) {}
 
   private showSuccess(message: string) {
@@ -54,6 +61,7 @@ export class AdminUnitsComponent implements OnInit {
   async ngOnInit() {
     await this.loadUnits();
     await this.loadAvailableUnits();
+    this.loadDesignations();
   }
 
   async loadAvailableUnits() {
@@ -299,6 +307,52 @@ export class AdminUnitsComponent implements OnInit {
     } catch (error) {
       console.error('Error adding new unit:', error);
       // You might want to show an error message to the user here
+    }
+  }
+
+  async addNewDesignation() {
+    try {
+      if (!this.newDesignation.designation.trim()) {
+        console.error('Designation name is required');
+        return;
+      }
+
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_designation')
+        .insert([{
+          designation: this.newDesignation.designation.trim()
+        }])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        await this.loadDesignations(); // Add this method to refresh designations
+        this.newDesignation.designation = ''; // Reset the form
+        this.showNewDesignationModal = false;
+        this.showSuccess('Designation added successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding new designation:', error);
+      // Handle error appropriately
+    }
+  }
+
+  async loadDesignations() {
+    try {
+      const { data, error } = await this.supabaseService.getClient()
+        .from('fbus_designation')
+        .select('*')
+        .order('designation', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        this.designations = data;
+      }
+    } catch (error) {
+      console.error('Error loading designations:', error);
+      // Handle error appropriately
     }
   }
 }
