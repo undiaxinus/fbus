@@ -63,6 +63,7 @@ export class BondManagementComponent implements OnInit {
   selectedStatus: string = 'all';
   selectedDepartment: string = 'all';
   showAddBondModal: boolean = false;
+  isEditMode: boolean = false;
   newBond: FbusBond = this.getEmptyBond();
   isSubmitting: boolean = false;
   isLoading: boolean = false;
@@ -268,33 +269,63 @@ export class BondManagementComponent implements OnInit {
   }
 
   async onSubmitBond(form: NgForm) {
-    if (form.valid) {
-      try {
-        // Calculate the initial status before submitting
-        const calculatedStatus = this.calculateBondStatus(this.newBond);
-        const bondData = {
-          ...this.newBond,
-          status: calculatedStatus
-        };
-        
-        const { data, error } = await this.supabase.getClient()
+    if (!form.valid) return;
+
+    this.isSubmitting = true;
+    this.error = null;
+
+    try {
+      // Calculate the initial status before submitting
+      const calculatedStatus = this.calculateBondStatus(this.newBond);
+      const bondData = {
+        ...this.newBond,
+        status: calculatedStatus
+      };
+      
+      let response;
+      if (this.isEditMode && this.newBond.id) {
+        // Update existing bond
+        response = await this.supabase.getClient()
+          .from('fbus_list')
+          .update(bondData)
+          .eq('id', this.newBond.id)
+          .select();
+      } else {
+        // Create new bond
+        response = await this.supabase.getClient()
           .from('fbus_list')
           .insert([bondData])
           .select();
-
-        if (error) throw error;
-
-        if (data) {
-          const newBonds = data as FbusBond[];
-          this.bonds = [...newBonds, ...this.bonds];
-          this.showAddBondModal = false;
-          this.newBond = this.getEmptyBond();
-          form.resetForm();
-        }
-      } catch (error) {
-        console.error('Error creating bond:', error);
-        this.error = 'Failed to create bond. Please try again.';
       }
+
+      const { data, error } = response;
+      if (error) throw error;
+
+      if (data) {
+        // Update local state
+        if (this.isEditMode) {
+          const index = this.activeBonds.findIndex(b => b.id === this.newBond.id);
+          if (index !== -1) {
+            this.activeBonds[index] = data[0];
+          }
+        } else {
+          this.activeBonds = [data[0], ...this.activeBonds];
+        }
+
+        // Reset form and state
+        this.showAddBondModal = false;
+        this.isEditMode = false;
+        this.newBond = this.getEmptyBond();
+        form.resetForm();
+        
+        // Reload bonds to ensure consistency
+        await this.loadBonds();
+      }
+    } catch (error: any) {
+      console.error('Error saving bond:', error);
+      this.error = error?.message || 'Failed to save bond. Please try again.';
+    } finally {
+      this.isSubmitting = false;
     }
   }
 
@@ -318,8 +349,10 @@ export class BondManagementComponent implements OnInit {
 
   async onEditBond(bond: FbusBond) {
     try {
+      this.isEditMode = true;
       this.newBond = { ...bond };
       this.showAddBondModal = true;
+      this.showViewBondModal = false;
     } catch (error) {
       console.error('Error editing bond:', error);
       this.error = 'Failed to edit bond. Please try again.';
@@ -517,5 +550,11 @@ export class BondManagementComponent implements OnInit {
     const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
     return daysUntilExpiry.toString();
+  }
+
+  onCancelEdit() {
+    this.showAddBondModal = false;
+    this.isEditMode = false;
+    this.newBond = this.getEmptyBond();
   }
 }
