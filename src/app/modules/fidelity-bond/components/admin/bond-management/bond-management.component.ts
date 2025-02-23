@@ -68,7 +68,7 @@ export class BondManagementComponent implements OnInit {
   isLoading: boolean = false;
   error: string | null = null;
 
-  departments: string[] = ['Finance', 'Treasury', 'Accounting', 'HR', 'Operations', 'IT'];
+  departments: string[] = [];
   statuses: string[] = ['VALID', 'EXPIRE SOON', 'EXPIRED'];
 
   parseInt = Number.parseInt;
@@ -139,23 +139,35 @@ export class BondManagementComponent implements OnInit {
   }
 
   async ngOnInit() {
-    await this.loadUnits();
-    await this.loadBonds();
-    await this.loadDesignations();
-  }
+    this.isLoading = true;
+    this.error = null;
 
-  async loadUnits() {
     try {
-      const { data, error } = await this.supabase.getClient()
+      // Load available units from the database
+      const { data: units, error: unitsError } = await this.supabase.getClient()
         .from('fbus_units')
         .select('units')
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .order('units', { ascending: true });
 
-      if (error) throw error;
-      this.availableUnits = data || [];
-    } catch (error) {
-      console.error('Error loading units:', error);
-      this.error = 'Failed to load units. Please try again.';
+      if (unitsError) {
+        console.error('Error loading units:', unitsError);
+        throw new Error('Failed to load units');
+      }
+
+      this.availableUnits = units || [];
+
+      // Load designations
+      await this.loadDesignations();
+
+      // Load bonds
+      await this.loadBonds();
+
+    } catch (error: any) {
+      console.error('Error initializing component:', error);
+      this.error = error?.message || 'Failed to load initial data. Please try again.';
+    } finally {
+      this.isLoading = false;
     }
   }
 
@@ -194,9 +206,6 @@ export class BondManagementComponent implements OnInit {
   }
 
   async loadBonds() {
-    this.isLoading = true;
-    this.error = null;
-    
     try {
       const { data, error } = await this.retryOperation(async () => {
         return await this.supabase.getClient()
@@ -206,17 +215,17 @@ export class BondManagementComponent implements OnInit {
           .order('dates', { ascending: false });
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading bonds:', error);
+        throw new Error('Failed to load bonds');
+      }
 
       if (data) {
         this.activeBonds = data.filter(bond => !bond.is_archived);
         this.archivedBonds = data.filter(bond => bond.is_archived);
       }
     } catch (error: any) {
-      console.error('Error loading bonds:', error);
-      this.error = 'Failed to load bonds. Please refresh the page and try again.';
-    } finally {
-      this.isLoading = false;
+      throw error; // Propagate error to ngOnInit for centralized error handling
     }
   }
 
@@ -225,29 +234,33 @@ export class BondManagementComponent implements OnInit {
       const { data, error } = await this.supabase.getClient()
         .from('fbus_designation')
         .select('*')
+        .is('deleted_at', null)
         .order('designation', { ascending: true });
 
-      if (error) throw error;
-
-      if (data) {
-        this.designations = data;
+      if (error) {
+        console.error('Error loading designations:', error);
+        throw new Error('Failed to load designations');
       }
-    } catch (error) {
-      console.error('Error loading designations:', error);
+
+      this.designations = data || [];
+    } catch (error: any) {
+      throw error; // Propagate error to ngOnInit for centralized error handling
     }
   }
 
   get filteredBonds(): FbusBond[] {
     const bonds = this.viewMode === 'active' ? this.activeBonds : this.archivedBonds;
     return bonds.filter(bond => {
+      const searchTerm = this.searchTerm.toLowerCase();
       const matchesSearch = !this.searchTerm || 
-        bond.first_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.middle_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.last_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.unit_office?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.risk_no?.toLowerCase().includes(this.searchTerm.toLowerCase());
+        bond.first_name?.toLowerCase().includes(searchTerm) ||
+        bond.middle_name?.toLowerCase().includes(searchTerm) ||
+        bond.last_name?.toLowerCase().includes(searchTerm) ||
+        bond.unit_office?.toLowerCase().includes(searchTerm) ||
+        bond.risk_no?.toLowerCase().includes(searchTerm);
       
-      const matchesStatus = this.selectedStatus === 'all' || this.calculateBondStatus(bond) === this.selectedStatus;
+      const bondStatus = this.calculateBondStatus(bond);
+      const matchesStatus = this.selectedStatus === 'all' || bondStatus === this.selectedStatus;
       const matchesDepartment = this.selectedDepartment === 'all' || bond.unit_office === this.selectedDepartment;
 
       return matchesSearch && matchesStatus && matchesDepartment;
