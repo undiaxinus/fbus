@@ -201,9 +201,9 @@
                 </div>
               </td>
               <td class="p-3 text-sm">
-                <span [class]="'inline-flex rounded-full px-2 py-0.5 text-xs font-medium truncate ' + (bond.days_remaning && parseInt(bond.days_remaning) < 30 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')"
-                      [title]="bond.days_remaning">
-                  {{bond.days_remaning}}
+                <span [class]="'inline-flex rounded-full px-2 py-0.5 text-xs font-medium truncate ' + (calculateDaysRemaining(bond) !== 'N/A' && parseInt(calculateDaysRemaining(bond)) < 30 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')"
+                      [title]="calculateDaysRemaining(bond)">
+                  {{calculateDaysRemaining(bond)}}
                 </span>
               </td>
               <td class="p-3 text-sm">
@@ -775,8 +775,9 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500">Days Remaining</label>
-                  <span [class]="'inline-flex rounded-full px-2 py-0.5 text-xs font-medium mt-1 ' + (selectedBond.days_remaning && parseInt(selectedBond.days_remaning) < 30 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')">
-                    {{selectedBond.days_remaning || 'N/A'}}
+                  <span [class]="'inline-flex rounded-full px-2 py-0.5 text-xs font-medium mt-1 ' + (calculateDaysRemaining(selectedBond) !== 'N/A' && parseInt(calculateDaysRemaining(selectedBond)) < 30 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')"
+                        [title]="calculateDaysRemaining(selectedBond)">
+                    {{calculateDaysRemaining(selectedBond)}}
                   </span>
                 </div>
                 <div>

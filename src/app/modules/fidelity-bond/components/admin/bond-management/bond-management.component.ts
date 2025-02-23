@@ -491,4 +491,18 @@ export class BondManagementComponent implements OnInit {
     this.selectedBond = bond;
     this.showViewBondModal = true;
   }
+
+  calculateDaysRemaining(bond: FbusBond): string {
+    if (!bond.effective_date || !bond.date_of_cancellation) {
+      return 'N/A';
+    }
+
+    const today = new Date();
+    const expiry = new Date(bond.date_of_cancellation);
+    
+    // Calculate days until expiry
+    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysUntilExpiry.toString();
+  }
 }
