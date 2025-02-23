@@ -91,6 +91,8 @@ export class BondManagementComponent implements OnInit {
     'NUP'
   ];
 
+  designations: any[] = [];
+
   constructor(private supabase: SupabaseService) {}
 
   private getEmptyBond(): FbusBond {
@@ -121,6 +123,7 @@ export class BondManagementComponent implements OnInit {
   async ngOnInit() {
     await this.loadUnits();
     await this.loadBonds();
+    await this.loadDesignations();
   }
 
   async loadUnits() {
@@ -156,6 +159,23 @@ export class BondManagementComponent implements OnInit {
       console.error('Error loading bonds:', error);
       this.error = 'Failed to load bonds. Please try again.';
       this.isLoading = false;
+    }
+  }
+
+  async loadDesignations() {
+    try {
+      const { data, error } = await this.supabase.getClient()
+        .from('fbus_designation')
+        .select('*')
+        .order('designation', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        this.designations = data;
+      }
+    } catch (error) {
+      console.error('Error loading designations:', error);
     }
   }
 
