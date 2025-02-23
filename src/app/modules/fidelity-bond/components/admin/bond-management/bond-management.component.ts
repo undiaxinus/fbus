@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { SupabaseService } from '../../../../../services/supabase.service';
+import { firstValueFrom } from 'rxjs';
+import { delay, retryWhen, take, tap } from 'rxjs/operators';
 
 interface FbusBond {
   id?: string;
@@ -26,6 +28,8 @@ interface FbusBond {
   profile: string;
   remark: string;
   dates?: string;
+  is_archived: boolean;
+  updated_at?: string;
 }
 
 @Component({
@@ -93,6 +97,16 @@ export class BondManagementComponent implements OnInit {
 
   designations: any[] = [];
 
+  viewMode: 'active' | 'archived' = 'active';
+  activeBonds: FbusBond[] = [];
+  archivedBonds: FbusBond[] = [];
+
+  showArchivedModal: boolean = false;
+  archivedSearchTerm: string = '';
+
+  showArchiveConfirmModal = false;
+  bondToArchive: FbusBond | null = null;
+
   constructor(private supabase: SupabaseService) {}
 
   private getEmptyBond(): FbusBond {
@@ -116,7 +130,8 @@ export class BondManagementComponent implements OnInit {
       contact_no: '',
       units: '',
       profile: '',
-      remark: ''
+      remark: '',
+      is_archived: false
     };
   }
 
@@ -141,23 +156,63 @@ export class BondManagementComponent implements OnInit {
     }
   }
 
+  private async ensureAuthenticated() {
+    try {
+      const session = await this.supabase.getClient().auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+      return true;
+    } catch (error) {
+      console.error('Authentication error:', error);
+      this.error = 'Session expired. Please refresh the page to log in again.';
+      return false;
+    }
+  }
+
+  private async retryOperation<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+    let attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        if (!(await this.ensureAuthenticated())) {
+          throw new Error('Authentication failed');
+        }
+        return await operation();
+      } catch (error: any) {
+        attempts++;
+        if (attempts === maxRetries) {
+          throw error;
+        }
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+      }
+    }
+    throw new Error('Operation failed after maximum retries');
+  }
+
   async loadBonds() {
     this.isLoading = true;
     this.error = null;
     
     try {
-      const { data, error } = await this.supabase.getClient()
-        .from('fbus_list')
-        .select('*')
-        .order('dates', { ascending: false });
+      const { data, error } = await this.retryOperation(async () => {
+        return await this.supabase.getClient()
+          .from('fbus_list')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .order('dates', { ascending: false });
+      });
 
       if (error) throw error;
 
-      this.bonds = data || [];
-      this.isLoading = false;
-    } catch (error) {
+      if (data) {
+        this.activeBonds = data.filter(bond => !bond.is_archived);
+        this.archivedBonds = data.filter(bond => bond.is_archived);
+      }
+    } catch (error: any) {
       console.error('Error loading bonds:', error);
-      this.error = 'Failed to load bonds. Please try again.';
+      this.error = 'Failed to load bonds. Please refresh the page and try again.';
+    } finally {
       this.isLoading = false;
     }
   }
@@ -180,18 +235,16 @@ export class BondManagementComponent implements OnInit {
   }
 
   get filteredBonds(): FbusBond[] {
-    return this.bonds.filter(bond => {
-      // Calculate the actual status for each bond
-      const currentStatus = this.calculateBondStatus(bond);
-      
-      // Apply filters
+    const bonds = this.viewMode === 'active' ? this.activeBonds : this.archivedBonds;
+    return bonds.filter(bond => {
       const matchesSearch = !this.searchTerm || 
-        bond.first_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.middle_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.last_name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        bond.unit_office.toLowerCase().includes(this.searchTerm.toLowerCase());
+        bond.first_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.middle_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.last_name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.unit_office?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        bond.risk_no?.toLowerCase().includes(this.searchTerm.toLowerCase());
       
-      const matchesStatus = this.selectedStatus === 'all' || currentStatus === this.selectedStatus;
+      const matchesStatus = this.selectedStatus === 'all' || this.calculateBondStatus(bond) === this.selectedStatus;
       const matchesDepartment = this.selectedDepartment === 'all' || bond.unit_office === this.selectedDepartment;
 
       return matchesSearch && matchesStatus && matchesDepartment;
@@ -320,6 +373,108 @@ export class BondManagementComponent implements OnInit {
 
       // Update days remaining
       this.newBond.days_remaning = daysUntilExpiry.toString();
+    }
+  }
+
+  async onArchiveBond(bond: FbusBond) {
+    this.bondToArchive = bond;
+    this.showArchiveConfirmModal = true;
+  }
+
+  async confirmArchiveBond() {
+    if (!this.bondToArchive) return;
+    
+    try {
+      const { data, error } = await this.supabase.getClient()
+        .from('fbus_list')
+        .update({ is_archived: true, updated_at: new Date().toISOString() })
+        .eq('id', this.bondToArchive.id)
+        .select();
+
+      if (error) throw error;
+
+      // Update local arrays
+      const index = this.activeBonds.findIndex(b => b.id === this.bondToArchive!.id);
+      if (index !== -1) {
+        const [archivedBond] = this.activeBonds.splice(index, 1);
+        archivedBond.is_archived = true;
+        archivedBond.updated_at = new Date().toISOString();
+        this.archivedBonds.unshift(archivedBond);
+      }
+
+      this.showArchiveConfirmModal = false;
+      this.bondToArchive = null;
+      
+      // Clear any existing error
+      this.error = null;
+    } catch (error: any) {
+      console.error('Error archiving bond:', error);
+      const errorMessage = error?.message || error?.error_description || 'Failed to archive bond. Please try again.';
+      this.error = errorMessage;
+      
+      // Reload bonds to ensure UI state is consistent with database
+      await this.loadBonds();
+    }
+  }
+
+  get filteredArchivedBonds(): FbusBond[] {
+    return this.archivedBonds.filter(bond => {
+      const searchTerm = this.archivedSearchTerm.toLowerCase();
+      return !this.archivedSearchTerm || 
+        bond.first_name?.toLowerCase().includes(searchTerm) ||
+        bond.middle_name?.toLowerCase().includes(searchTerm) ||
+        bond.last_name?.toLowerCase().includes(searchTerm) ||
+        bond.unit_office?.toLowerCase().includes(searchTerm) ||
+        bond.risk_no?.toLowerCase().includes(searchTerm);
+    });
+  }
+
+  async onRestoreBond(bond: FbusBond) {
+    if (!bond.id) {
+      this.error = 'Invalid bond ID. Please refresh the page and try again.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.error = null;
+
+    try {
+      const { data: updatedBond, error: updateError } = await this.retryOperation(async () => {
+        return await this.supabase.getClient()
+          .from('fbus_list')
+          .update({ is_archived: false })
+          .eq('id', bond.id)
+          .select()
+          .single();
+      });
+
+      if (updateError) throw updateError;
+      if (!updatedBond) throw new Error('Failed to restore bond');
+
+      // Update local state
+      const index = this.archivedBonds.findIndex(b => b.id === bond.id);
+      if (index !== -1) {
+        const [restoredBond] = this.archivedBonds.splice(index, 1);
+        restoredBond.is_archived = false;
+        this.activeBonds.unshift(restoredBond);
+      }
+
+      // Clear any existing error
+      this.error = null;
+      
+      // Close the modal if there are no more archived bonds
+      if (this.archivedBonds.length === 0) {
+        this.showArchivedModal = false;
+      }
+    } catch (error: any) {
+      console.error('Error restoring bond:', error);
+      const errorMessage = error?.message || error?.error_description || 'Failed to restore bond. Please try again.';
+      this.error = errorMessage;
+      
+      // Reload bonds to ensure UI state is consistent with database
+      await this.loadBonds();
+    } finally {
+      this.isLoading = false;
     }
   }
 }
