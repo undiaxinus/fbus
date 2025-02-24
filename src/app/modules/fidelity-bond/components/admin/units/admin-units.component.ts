@@ -53,6 +53,11 @@ export class AdminUnitsComponent implements OnInit {
   designationToDelete: any = null;
   designationToRestore: any = null;
 
+  // Add these pagination properties for designations
+  designationCurrentPage = 1;
+  designationPageSize = 10;
+  designationTotalPages = 1;
+
   private supabase = inject(SupabaseService);
 
   // Add this property to your component class
@@ -64,6 +69,9 @@ export class AdminUnitsComponent implements OnInit {
   showArchivedDesignationsModal = false;
   archivedDesignations: any[] = [];
   archivedDesignationsCount: number = 0;
+
+  // Add this property to make Math available in the template
+  Math = Math;
 
   private showSuccess(message: string) {
     this.successMessage = message;
@@ -457,7 +465,7 @@ export class AdminUnitsComponent implements OnInit {
 
       if (data) {
         this.designations = data;
-        this.filteredDesignations = [...data];
+        this.applyDesignationFilterAndPagination();
       }
     } catch (error) {
       console.error('Error loading designations:', error);
@@ -480,14 +488,41 @@ export class AdminUnitsComponent implements OnInit {
     }
   }
 
-  onDesignationFilter() {
+  // Add this method for designation pagination
+  applyDesignationFilterAndPagination() {
+    // Apply filter
+    let filtered = this.designations;
     if (this.designationFilterText) {
       const searchText = this.designationFilterText.toLowerCase();
-      this.filteredDesignations = this.designations.filter(designation =>
+      filtered = this.designations.filter(designation =>
         designation.designation.toLowerCase().includes(searchText)
       );
-    } else {
-      this.filteredDesignations = [...this.designations];
+    }
+
+    // Calculate total pages
+    this.designationTotalPages = Math.ceil(filtered.length / this.designationPageSize);
+    
+    // Ensure current page is within bounds
+    if (this.designationCurrentPage > this.designationTotalPages) {
+      this.designationCurrentPage = this.designationTotalPages || 1;
+    }
+
+    // Get paginated data
+    const startIndex = (this.designationCurrentPage - 1) * this.designationPageSize;
+    this.filteredDesignations = filtered.slice(startIndex, startIndex + this.designationPageSize);
+  }
+
+  // Update the existing onDesignationFilter method
+  onDesignationFilter() {
+    this.designationCurrentPage = 1; // Reset to first page when filtering
+    this.applyDesignationFilterAndPagination();
+  }
+
+  // Add this method for changing designation pages
+  changeDesignationPage(page: number) {
+    if (page >= 1 && page <= this.designationTotalPages) {
+      this.designationCurrentPage = page;
+      this.applyDesignationFilterAndPagination();
     }
   }
 
@@ -607,6 +642,7 @@ export class AdminUnitsComponent implements OnInit {
 
       // Reset and refresh
       this.showRestoreDesignationModal = false;
+      this.showArchivedDesignationsModal = true;
       this.designationToRestore = null;
       await this.loadDesignations();
       await this.loadArchivedDesignations();
