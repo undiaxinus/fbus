@@ -114,6 +114,27 @@ export class BondManagementComponent implements OnInit {
   showViewBondModal: boolean = false;
   selectedBond: FbusBond | null = null;
 
+  // Pagination properties
+  currentPage = 1;
+  itemsPerPage = 10;
+
+  get totalPages() {
+    return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
+  }
+
+  get startIndex() {
+    return (this.currentPage - 1) * this.itemsPerPage;
+  }
+
+  get endIndex() {
+    const end = this.startIndex + this.itemsPerPage;
+    return Math.min(end, this.filteredBonds.length);
+  }
+
+  get paginatedBonds() {
+    return this.filteredBonds.slice(this.startIndex, this.endIndex);
+  }
+
   constructor(private supabase: SupabaseService) {}
 
   private getEmptyBond(): FbusBond {
@@ -253,22 +274,32 @@ export class BondManagementComponent implements OnInit {
   }
 
   get filteredBonds(): FbusBond[] {
-    const bonds = this.viewMode === 'active' ? this.activeBonds : this.archivedBonds;
-    return bonds.filter(bond => {
-      const searchTerm = this.searchTerm.toLowerCase();
-      const matchesSearch = !this.searchTerm || 
-        bond.first_name?.toLowerCase().includes(searchTerm) ||
-        bond.middle_name?.toLowerCase().includes(searchTerm) ||
-        bond.last_name?.toLowerCase().includes(searchTerm) ||
-        bond.unit_office?.toLowerCase().includes(searchTerm) ||
-        bond.risk_no?.toLowerCase().includes(searchTerm);
-      
-      const bondStatus = this.calculateBondStatus(bond);
-      const matchesStatus = this.selectedStatus === 'all' || bondStatus === this.selectedStatus;
-      const matchesDepartment = this.selectedDepartment === 'all' || bond.unit_office === this.selectedDepartment;
+    let bonds = this.viewMode === 'active' ? this.activeBonds : this.archivedBonds;
+    
+    // Apply search filter
+    if (this.searchTerm) {
+      const searchLower = this.searchTerm.toLowerCase();
+      bonds = bonds.filter(bond => 
+        bond.first_name?.toLowerCase().includes(searchLower) ||
+        bond.middle_name?.toLowerCase().includes(searchLower) ||
+        bond.last_name?.toLowerCase().includes(searchLower) ||
+        bond.unit_office?.toLowerCase().includes(searchLower) ||
+        bond.risk_no?.toLowerCase().includes(searchLower) ||
+        bond.contact_no?.toLowerCase().includes(searchLower)
+      );
+    }
 
-      return matchesSearch && matchesStatus && matchesDepartment;
-    });
+    // Apply status filter
+    if (this.selectedStatus !== 'all') {
+      bonds = bonds.filter(bond => this.calculateBondStatus(bond) === this.selectedStatus);
+    }
+
+    // Apply department filter
+    if (this.selectedDepartment !== 'all') {
+      bonds = bonds.filter(bond => bond.unit_office === this.selectedDepartment);
+    }
+
+    return bonds;
   }
 
   async onSubmitBond(form: NgForm) {
@@ -563,6 +594,7 @@ export class BondManagementComponent implements OnInit {
     this.searchTerm = '';
     this.selectedStatus = 'all';
     this.selectedDepartment = 'all';
+    this.currentPage = 1;
   }
 
   onViewBond(bond: FbusBond) {
@@ -795,5 +827,22 @@ export class BondManagementComponent implements OnInit {
       console.error('Error loading image:', error);
       throw error;
     }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  // Reset pagination when filters change
+  onSearch() {
+    this.currentPage = 1;
   }
 }
