@@ -48,21 +48,36 @@ export class AdminUnitsComponent implements OnInit {
   };
 
   designations: any[] = [];
+  filteredDesignations: any[] = [];
+  designationFilterText: string = '';
+  designationToDelete: any = null;
+  designationToRestore: any = null;
 
   private supabase = inject(SupabaseService);
 
+  // Add this property to your component class
+  archivedUnitsCount: number = 0;
+
+  // Add these properties at the top of your component class
+  showDeleteDesignationModal = false;
+  showRestoreDesignationModal = false;
+  showArchivedDesignationsModal = false;
+  archivedDesignations: any[] = [];
+  archivedDesignationsCount: number = 0;
+
   private showSuccess(message: string) {
     this.successMessage = message;
-    this.showSuccessAlert = true;
     setTimeout(() => {
-      this.showSuccessAlert = false;
+      this.successMessage = '';
     }, 3000);
   }
 
   async ngOnInit() {
     await this.loadUnits();
     await this.loadAvailableUnits();
-    this.loadDesignations();
+    await this.loadArchivedUnitsCount();
+    await this.loadDesignations();
+    await this.loadArchivedDesignationsCount();
   }
 
   async loadAvailableUnits() {
@@ -84,15 +99,14 @@ export class AdminUnitsComponent implements OnInit {
   async loadUnits() {
     try {
       const { data, error } = await this.supabase.client
-        .from('fbus_unit_office')
-        .select('*, fbus_units!inner(*)')
+        .from('fbus_units')
+        .select('*')
         .is('deleted_at', null);
 
       if (error) throw error;
       this.units = data.map((item: any) => ({
         ...item,
-        unit: item.fbus_units.units,
-        unit_office: item.unit_office
+        units: item.units
       }));
       this.applyFilterAndPagination();
     } catch (error) {
@@ -106,8 +120,7 @@ export class AdminUnitsComponent implements OnInit {
     if (this.filterText) {
       const searchText = this.filterText.toLowerCase();
       filtered = this.units.filter(unit =>
-        unit.unit.toLowerCase().includes(searchText) ||
-        unit.unit_office.toLowerCase().includes(searchText)
+        unit.units.toLowerCase().includes(searchText)
       );
     }
 
@@ -224,19 +237,32 @@ export class AdminUnitsComponent implements OnInit {
       try {
         const timestamp = new Date().toISOString();
         const { error } = await this.supabase.client
-          .from('fbus_unit_office')
+          .from('fbus_units')
           .update({ deleted_at: timestamp })
           .eq('id', this.unitToDelete.id)
           .is('deleted_at', null);
 
         if (error) throw error;
 
+        // Log the activity
+        const { error: activityError } = await this.supabase.client
+          .from('fbus_activities')
+          .insert([{
+            action: `Archived unit: ${this.unitToDelete.units}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: timestamp
+          }]);
+
+        if (activityError) throw activityError;
+
         await this.loadUnits();
         this.showDeleteModal = false;
         this.unitToDelete = null;
         this.showSuccess('Unit archived successfully!');
+        await this.loadArchivedUnitsCount();
       } catch (error) {
         console.error('Error archiving unit:', error);
+        this.showError('Failed to archive unit');
       }
     }
   }
@@ -249,20 +275,20 @@ export class AdminUnitsComponent implements OnInit {
   async showArchivedUnits() {
     this.showArchivedModal = true;
     await this.loadArchivedUnits();
+    await this.loadArchivedUnitsCount();
   }
 
   async loadArchivedUnits() {
     try {
       const { data, error } = await this.supabase.client
-        .from('fbus_unit_office')
-        .select('*, fbus_units!inner(*)')
+        .from('fbus_units')
+        .select('*')
         .not('deleted_at', 'is', null);
 
       if (error) throw error;
       this.archivedUnits = data.map((item: any) => ({
         ...item,
-        unit: item.fbus_units.units,
-        unit_office: item.unit_office
+        units: item.units
       }));
     } catch (error) {
       console.error('Error fetching archived units:', error);
@@ -305,8 +331,9 @@ export class AdminUnitsComponent implements OnInit {
         // Reset and refresh
         this.showRestoreModal = false;
         this.unitToRestore = null;
-        await this.loadAvailableUnits();
+        await this.loadUnits();
         await this.loadArchivedUnits();
+        await this.loadArchivedUnitsCount();
         this.showSuccess('Unit restored successfully');
       }
     } catch (error) {
@@ -423,17 +450,172 @@ export class AdminUnitsComponent implements OnInit {
       const { data, error } = await this.supabase.client
         .from('fbus_designation')
         .select('*')
+        .is('deleted_at', null)
         .order('designation', { ascending: true });
 
       if (error) throw error;
 
       if (data) {
         this.designations = data;
+        this.filteredDesignations = [...data];
       }
     } catch (error) {
       console.error('Error loading designations:', error);
     }
   }
 
+  // Add this method to fetch the count
+  async loadArchivedUnitsCount() {
+    try {
+      const { count, error } = await this.supabase.client
+        .from('fbus_units')
+        .select('*', { count: 'exact', head: true })
+        .not('deleted_at', 'is', null);
+
+      if (error) throw error;
+      this.archivedUnitsCount = count || 0;
+    } catch (error) {
+      console.error('Error fetching archived units count:', error);
+      this.archivedUnitsCount = 0;
+    }
+  }
+
+  onDesignationFilter() {
+    if (this.designationFilterText) {
+      const searchText = this.designationFilterText.toLowerCase();
+      this.filteredDesignations = this.designations.filter(designation =>
+        designation.designation.toLowerCase().includes(searchText)
+      );
+    } else {
+      this.filteredDesignations = [...this.designations];
+    }
+  }
+
+  async showDeleteDesignationConfirmation(designation: any) {
+    this.designationToDelete = designation;
+    this.showDeleteDesignationModal = true;
+  }
+
+  async confirmDeleteDesignation() {
+    if (this.designationToDelete) {
+      try {
+        const timestamp = new Date().toISOString();
+        const { error } = await this.supabase.client
+          .from('fbus_designation')
+          .update({ deleted_at: timestamp })
+          .eq('id', this.designationToDelete.id)
+          .is('deleted_at', null);
+
+        if (error) throw error;
+
+        // Log the activity
+        const { error: activityError } = await this.supabase.client
+          .from('fbus_activities')
+          .insert([{
+            action: `Archived designation: ${this.designationToDelete.designation}`,
+            user_name: await this.getCurrentUserName(),
+            created_at: timestamp
+          }]);
+
+        if (activityError) throw activityError;
+
+        await this.loadDesignations();
+        this.showDeleteDesignationModal = false;
+        this.designationToDelete = null;
+        this.showSuccess('Designation archived successfully!');
+      } catch (error) {
+        console.error('Error archiving designation:', error);
+        this.showError('Failed to archive designation');
+      }
+    }
+  }
+
+  // Add this method to show archived designations
+  async showArchivedDesignations() {
+    this.showArchivedDesignationsModal = true;
+    await this.loadArchivedDesignations();
+    await this.loadArchivedDesignationsCount();
+  }
+
+  // Add method to load archived designations
+  async loadArchivedDesignations() {
+    try {
+      const { data, error } = await this.supabase.client
+        .from('fbus_designation')
+        .select('*')
+        .not('deleted_at', 'is', null)
+        .order('designation', { ascending: true });
+
+      if (error) throw error;
+      this.archivedDesignations = data || [];
+    } catch (error) {
+      console.error('Error fetching archived designations:', error);
+      this.archivedDesignations = [];
+    }
+  }
+
+  // Add method to get archived designations count
+  async loadArchivedDesignationsCount() {
+    try {
+      const { count, error } = await this.supabase.client
+        .from('fbus_designation')
+        .select('*', { count: 'exact', head: true })
+        .not('deleted_at', 'is', null);
+
+      if (error) throw error;
+      this.archivedDesignationsCount = count || 0;
+    } catch (error) {
+      console.error('Error fetching archived designations count:', error);
+      this.archivedDesignationsCount = 0;
+    }
+  }
+
+  // Update the restore confirmation method
+  showRestoreDesignationConfirmation(designation: any) {
+    this.designationToRestore = designation;
+    this.showRestoreDesignationModal = true;
+  }
+
+  // Update the restore confirmation method
+  async confirmRestoreDesignation() {
+    try {
+      if (!this.designationToRestore) {
+        console.error('No designation selected for restore');
+        return;
+      }
+
+      const { error } = await this.supabase.client
+        .from('fbus_designation')
+        .update({ 
+          deleted_at: null,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', this.designationToRestore.id);
+
+      if (error) throw error;
+
+      // Log the activity
+      const { error: activityError } = await this.supabase.client
+        .from('fbus_activities')
+        .insert([{
+          action: `Restored designation: ${this.designationToRestore.designation}`,
+          user_name: await this.getCurrentUserName(),
+          created_at: new Date().toISOString()
+        }]);
+
+      if (activityError) throw activityError;
+
+      // Reset and refresh
+      this.showRestoreDesignationModal = false;
+      this.designationToRestore = null;
+      await this.loadDesignations();
+      await this.loadArchivedDesignations();
+      await this.loadArchivedDesignationsCount();
+      this.showSuccess('Designation restored successfully');
+    } catch (error) {
+      console.error('Error restoring designation:', error);
+      this.showError('Failed to restore designation');
+    }
+  }
 
 }
