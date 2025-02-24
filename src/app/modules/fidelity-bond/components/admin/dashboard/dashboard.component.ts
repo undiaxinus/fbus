@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../../../core/services/supabase.service';
 import { inject } from '@angular/core';
+import { Chart, ChartConfiguration } from 'chart.js/auto';
 
 interface Bond {
   id: number;
@@ -31,9 +32,16 @@ interface DashboardStats {
   standalone: true,
   imports: [CommonModule, RouterModule]
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, AfterViewInit {
   private supabase = inject(SupabaseService);
   
+  @ViewChild('distributionChart') distributionChartRef!: ElementRef;
+  @ViewChild('trendChart') trendChartRef!: ElementRef;
+  
+  private distributionChart?: Chart;
+  private trendChart?: Chart;
+  today: Date = new Date();
+
   stats: DashboardStats = {
     totalBonds: 0,
     activeBonds: 0,
@@ -42,19 +50,10 @@ export class AdminDashboardComponent implements OnInit {
   };
 
   activeRate: string = '0.0%';
-
   recentActivities: any[] = [];
-
   upcomingExpirations: any[] = [];
-
-  bondDistribution = {
-    labels: ['Active', 'Expiring Soon', 'Expired'],
-    data: [70, 20, 10]
-  };
-
   showExpiringModal = false;
   allExpiringBonds: any[] = [];
-
   showActivitiesModal = false;
   allActivities: any[] = [];
 
@@ -62,6 +61,88 @@ export class AdminDashboardComponent implements OnInit {
     this.loadStats();
     this.loadUpcomingExpirations();
     this.loadRecentActivities();
+  }
+
+  ngAfterViewInit() {
+    this.initializeCharts();
+  }
+
+  private initializeCharts() {
+    // Initialize Distribution Chart
+    const distributionCtx = this.distributionChartRef.nativeElement.getContext('2d');
+    this.distributionChart = new Chart(distributionCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Active', 'Expiring Soon', 'Expired'],
+        datasets: [{
+          data: [this.stats.activeBonds, this.stats.expiringBonds, this.stats.expiredBonds],
+          backgroundColor: ['#3B82F6', '#10B981', '#EF4444']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+
+    // Initialize Trend Chart
+    const trendCtx = this.trendChartRef.nativeElement.getContext('2d');
+    this.trendChart = new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Bond Trends',
+          data: [150, 180, 220, 250, 280, 300],
+          borderColor: '#3B82F6',
+          tension: 0.4,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  private updateCharts() {
+    if (this.distributionChart) {
+      this.distributionChart.data.datasets[0].data = [
+        this.stats.activeBonds,
+        this.stats.expiringBonds,
+        this.stats.expiredBonds
+      ];
+      this.distributionChart.update();
+    }
+
+    if (this.trendChart) {
+      const monthlyData = this.calculateMonthlyBondTrends(this.allExpiringBonds.map(bond => ({
+        effective_date: bond.expiryDate,
+        date_of_cancellation: bond.expiryDate,
+        is_archived: false,
+        id: 0
+      })));
+      
+      this.trendChart.data.labels = monthlyData.map(d => d.name);
+      this.trendChart.data.datasets[0].data = monthlyData.map(d => d.value);
+      this.trendChart.update();
+    }
   }
 
   async loadStats() {
@@ -87,10 +168,36 @@ export class AdminDashboardComponent implements OnInit {
         // Calculate active rate percentage
         const activeRate = (this.stats.activeBonds / this.stats.totalBonds * 100).toFixed(1);
         this.activeRate = `${activeRate}%`;
+
+        // Update the charts with new data
+        this.updateCharts();
       }
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
     }
+  }
+
+  calculateMonthlyBondTrends(bonds: Bond[]): { name: string; value: number }[] {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonth = new Date().getMonth();
+    const monthlyTrends: { name: string; value: number }[] = [];
+
+    // Get last 6 months of data
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const monthName = months[monthIndex];
+      const monthBonds = bonds.filter(bond => {
+        const bondDate = new Date(bond.effective_date);
+        return bondDate.getMonth() === monthIndex;
+      });
+
+      monthlyTrends.push({
+        name: monthName,
+        value: monthBonds.length
+      });
+    }
+
+    return monthlyTrends;
   }
 
   async loadUpcomingExpirations() {
