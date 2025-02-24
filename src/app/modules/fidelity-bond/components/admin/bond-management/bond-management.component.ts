@@ -4,6 +4,9 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { SupabaseService } from '../../../../../services/supabase.service';
 import { firstValueFrom } from 'rxjs';
 import { delay, retryWhen, take, tap } from 'rxjs/operators';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
+import { Workbook, Row, Cell } from 'exceljs';
 
 interface FbusBond {
   id?: string;
@@ -585,5 +588,212 @@ export class BondManagementComponent implements OnInit {
     this.showAddBondModal = false;
     this.isEditMode = false;
     this.newBond = this.getEmptyBond();
+  }
+
+  async exportReport() {
+    try {
+      const currentDate = new Date();
+      const period = currentDate.toLocaleString('default', { month: 'long' }).toUpperCase() + ' ' + currentDate.getFullYear();
+
+      // Create workbook and worksheet
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet('Bond Report');
+
+      // Add images
+      const logoId1 = workbook.addImage({
+        base64: await this.getBase64Image('/assets/logo.png'),
+        extension: 'png',
+      });
+
+      const logoId2 = workbook.addImage({
+        base64: await this.getBase64Image('/assets/finance.png'),
+        extension: 'png',
+      });
+
+      // Add headers starting from row 1
+      const headerRows = [
+        'Republic of the Philippines',
+        'National Police Commission',
+        'PHILIPPINE NATIONAL POLICE',
+        'Regional Finance Unit-5',
+        'Camp BGen Simeon A Ola, Legazcy City',
+        '',  // Single empty row for spacing
+        'List of NSU PNP Accountable Officers/Employees',
+        'Other Accountable Officers/Finance PNCOs',
+        `Period Covered: ${period}`,
+        ''
+      ];
+
+      // Add and format header rows
+      headerRows.forEach((text, index) => {
+        if (text) {
+          const row = worksheet.addRow([text]);
+          worksheet.mergeCells(`A${row.number}:K${row.number}`);
+          row.font = { bold: true, size: 12 };
+          row.alignment = { horizontal: 'center', vertical: 'middle' };
+          row.height = 18;
+        } else {
+          const emptyRow = worksheet.addRow([]);
+          emptyRow.height = 10;
+        }
+      });
+
+      // Add images overlapping with first few rows
+      worksheet.addImage(logoId1, {
+        tl: { col: 2, row: 3 },  // Start from top
+        ext: { width: 80, height: 80 }
+      });
+
+      worksheet.addImage(logoId2, {
+        tl: { col: 9, row: 3 },  // Start from top
+        ext: { width: 80, height: 80 }
+      });
+
+      // Add table headers immediately after
+      const mainHeaders = [
+        'NR', 'RANK', 'NAME', 'DESIGNATION', 'UNIT', 'MCA',
+        'FIDELITY BOND'
+      ];
+
+      const mainHeaderRow = worksheet.addRow(mainHeaders);
+      mainHeaderRow.font = { bold: true };
+      mainHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.mergeCells(`G${mainHeaderRow.number}:K${mainHeaderRow.number}`);
+
+      // Add sub-headers
+      const subHeaders = [
+        '',             // NR
+        '',             // RANK
+        '',             // NAME
+        '',             // DESIGNATION
+        '',             // UNIT
+        '',             // MCA
+        'AMOUNT\nOF BOND',
+        'BOND\nPREMIUM',
+        'RISK NO.',
+        'EFFECTIVITY\nDATE',
+        'DATE OF\nCANCELLATION'
+      ];
+
+      // Add sub-header row
+      const subHeaderRow = worksheet.addRow(subHeaders);
+      subHeaderRow.font = { bold: true };
+      subHeaderRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      subHeaderRow.height = 30; // Adjust height for wrapped text
+
+      // Set column widths
+      worksheet.columns = [
+        { width: 4 },  // NR
+        { width: 8 },  // RANK
+        { width: 30 }, // NAME
+        { width: 20 }, // DESIGNATION
+        { width: 20 }, // UNIT
+        { width: 20 }, // MCA
+        { width: 20 }, // AMOUNT OF BOND
+        { width: 20 }, // BOND PREMIUM
+        { width: 20 }, // RISK NO
+        { width: 20 }, // EFFECTIVITY DATE
+        { width: 25 }  // DATE OF CANCELLATION
+      ];
+
+      // Add borders to all header cells
+      [mainHeaderRow, subHeaderRow].forEach(row => {
+        row.eachCell((cell: Cell, colNumber: number) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Add data rows
+      const data = this.activeBonds.map((bond, index) => ([
+        index + 1,
+        bond.rank,
+        `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
+        bond.designation,
+        bond.unit_office,
+        parseFloat(bond.mca || '0').toFixed(2),
+        parseFloat(bond.amount_of_bond || '0').toFixed(2),
+        parseFloat(bond.bond_premium || '0').toFixed(2),
+        bond.risk_no,
+        bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
+        bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
+      ]));
+
+      data.forEach(rowData => {
+        const row = worksheet.addRow(rowData);
+        row.alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        // Format number columns
+        row.getCell(6).numFmt = '#,##0.00'; // MCA
+        row.getCell(7).numFmt = '#,##0.00'; // AMOUNT OF BOND
+        row.getCell(8).numFmt = '#,##0.00'; // BOND PREMIUM
+      });
+
+      // Add borders to all cells
+      worksheet.eachRow((row: Row, rowNumber: number) => {
+        row.eachCell((cell: Cell, colNumber: number) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Generate and save file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `Bond_Report_${period}.xlsx`);
+
+      await this.logExportActivity();
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      this.error = 'Failed to export report. Please try again.';
+    }
+  }
+
+  private async logExportActivity() {
+    try {
+      const { error: activityError } = await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert([{
+          action: 'Exported bond report',
+          user_name: await this.getCurrentUserName(),
+          created_at: new Date().toISOString()
+        }]);
+
+      if (activityError) throw activityError;
+    } catch (error) {
+      console.error('Error logging export activity:', error);
+    }
+  }
+
+  private async getBase64Image(imagePath: string): Promise<string> {
+    try {
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            // Remove the data URL prefix (e.g., "data:image/png;base64,")
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+          } else {
+            reject(new Error('Failed to convert image to base64'));
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read image'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error loading image:', error);
+      throw error;
+    }
   }
 }
