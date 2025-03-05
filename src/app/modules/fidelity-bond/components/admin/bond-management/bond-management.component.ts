@@ -39,6 +39,15 @@ interface FbusBond {
   updated_at?: string;
 }
 
+interface FbusSignatory {
+  id: string;
+  position_title: string;
+  name: string;
+  rank: string;
+  designation: string;
+  office: string;
+}
+
 @Component({
   selector: 'app-bond-management',
   standalone: true,
@@ -136,6 +145,12 @@ export class BondManagementComponent implements OnInit {
 
   showExportMenu = false;
 
+  signatories: {
+    preparedBy?: FbusSignatory;
+    certifiedBy?: FbusSignatory;
+    notedBy?: FbusSignatory;
+  } = {};
+
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
   }
@@ -199,6 +214,9 @@ export class BondManagementComponent implements OnInit {
       }
 
       this.availableUnits = units || [];
+
+      // Load signatories
+      await this.loadSignatories();
 
       // Load designations
       await this.loadDesignations();
@@ -288,6 +306,90 @@ export class BondManagementComponent implements OnInit {
       this.designations = data || [];
     } catch (error: any) {
       throw error; // Propagate error to ngOnInit for centralized error handling
+    }
+  }
+
+  async loadSignatories() {
+    try {
+      const { data, error } = await this.retryOperation(async () => {
+        return await this.supabase.getClient()
+          .from('fbus_signatories')
+          .select('*')
+          .is('deleted_at', null);
+      });
+
+      if (error) {
+        console.error('Error loading signatories:', error);
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        // Assign signatories based on their position_title
+        this.signatories = {
+          preparedBy: data.find(sig => sig.position_title === 'Prepared By'),
+          certifiedBy: data.find(sig => sig.position_title === 'Certified Correct'),
+          notedBy: data.find(sig => sig.position_title === 'Noted by')
+        };
+        console.log('Loaded signatories:', this.signatories);
+      } else {
+        console.log('No signatories found in database');
+        // Set default values if no data is found
+        this.signatories = {
+          preparedBy: {
+            id: '1',
+            position_title: 'Prepared By',
+            name: 'MAY LANNIE B ESPIRITU',
+            rank: 'Non-Uniformed Personnel',
+            designation: 'MODE Examiner, RFU-5',
+            office: 'RFU-5'
+          },
+          certifiedBy: {
+            id: '2',
+            position_title: 'Certified Correct',
+            name: 'BRYAN JOHN D BACCAY',
+            rank: 'Police Major',
+            designation: 'Chief Disbursement Section, RFU-5',
+            office: 'RFU-5'
+          },
+          notedBy: {
+            id: '3',
+            position_title: 'Noted by',
+            name: 'JENNIFER N BELMONTE',
+            rank: 'Police Colonel',
+            designation: 'Chief, RFU-5',
+            office: 'RFU-5'
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Error loading signatories:', error);
+      // Set default values in case of error
+      this.signatories = {
+        preparedBy: {
+          id: '1',
+          position_title: 'Prepared By',
+          name: 'MAY LANNIE B ESPIRITU',
+          rank: 'Non-Uniformed Personnel',
+          designation: 'MODE Examiner, RFU-5',
+          office: 'RFU-5'
+        },
+        certifiedBy: {
+          id: '2',
+          position_title: 'Certified Correct',
+          name: 'BRYAN JOHN D BACCAY',
+          rank: 'Police Major',
+          designation: 'Chief Disbursement Section, RFU-5',
+          office: 'RFU-5'
+        },
+        notedBy: {
+          id: '3',
+          position_title: 'Noted by',
+          name: 'JENNIFER N BELMONTE',
+          rank: 'Police Colonel',
+          designation: 'Chief, RFU-5',
+          office: 'RFU-5'
+        }
+      };
     }
   }
 
@@ -804,9 +906,30 @@ export class BondManagementComponent implements OnInit {
       const signatureSection = [
         ['Prepared By:', '', 'Certified Correct:', '', 'Noted by:', ''],
         ['', '', '', '', '', ''],
-        ['MAY LANNIE B ESPIRITU', '', 'BRYAN JOHN D BACCAY', '', 'JENNIFER N BELMONTE', ''],
-        ['Non-Uniformed Personnel', '', 'Police Major', '', 'Police Colonel', ''],
-        ['MODE Examiner, RFU-5', '', 'Chief Disbursement Section, RFU-5', '', 'Chief, RFU-5', '']
+        [
+          this.signatories.preparedBy?.name || 'MAY LANNIE B ESPIRITU',
+          '',
+          this.signatories.certifiedBy?.name || 'BRYAN JOHN D BACCAY',
+          '',
+          this.signatories.notedBy?.name || 'JENNIFER N BELMONTE',
+          ''
+        ],
+        [
+          this.signatories.preparedBy?.rank || 'Non-Uniformed Personnel',
+          '',
+          this.signatories.certifiedBy?.rank || 'Police Major',
+          '',
+          this.signatories.notedBy?.rank || 'Police Colonel',
+          ''
+        ],
+        [
+          this.signatories.preparedBy?.designation || 'MODE Examiner, RFU-5',
+          '',
+          this.signatories.certifiedBy?.designation || 'Chief Disbursement Section, RFU-5',
+          '',
+          this.signatories.notedBy?.designation || 'Chief, RFU-5',
+          ''
+        ]
       ];
 
       signatureSection.forEach(rowData => {
@@ -1019,23 +1142,44 @@ export class BondManagementComponent implements OnInit {
       const pdfSignatureSpacing = 7;
 
       // Function to add signature block
-      const addSignatureBlock = (x: number, title: string, name: string, position1: string, position2: string) => {
+      const addSignatureBlock = (x: number, title: string, signatory: FbusSignatory | undefined, defaultName: string, defaultRank: string, defaultDesignation: string) => {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         pdf.text(title, x, pdfSignatureY, { align: 'center' });
         
         pdf.setFont('helvetica', 'bold');
-        pdf.text(name, x, pdfSignatureY + pdfSignatureSpacing * 2, { align: 'center' });
+        pdf.text(signatory?.name || defaultName, x, pdfSignatureY + pdfSignatureSpacing * 2, { align: 'center' });
         
         pdf.setFont('helvetica', 'normal');
-        pdf.text(position1, x, pdfSignatureY + pdfSignatureSpacing * 3, { align: 'center' });
-        pdf.text(position2, x, pdfSignatureY + pdfSignatureSpacing * 4, { align: 'center' });
+        pdf.text(signatory?.rank || defaultRank, x, pdfSignatureY + pdfSignatureSpacing * 3, { align: 'center' });
+        pdf.text(signatory?.designation || defaultDesignation, x, pdfSignatureY + pdfSignatureSpacing * 4, { align: 'center' });
       };
 
       // Add the three signature blocks
-      addSignatureBlock(pdfSignatureLeftX + 30, 'Prepared By:', 'MAY LANNIE B ESPIRITU', 'Non-Uniformed Personnel', 'MODE Examiner, RFU-5');
-      addSignatureBlock(pdfSignatureCenterX, 'Certified Correct:', 'BRYAN JOHN D BACCAY', 'Police Major', 'Chief Disbursement Section, RFU-5');
-      addSignatureBlock(pdfSignatureRightX, 'Noted by:', 'JENNIFER N BELMONTE', 'Police Colonel', 'Chief, RFU-5');
+      addSignatureBlock(
+        pdfSignatureLeftX + 30,
+        'Prepared By:',
+        this.signatories.preparedBy,
+        'MAY LANNIE B ESPIRITU',
+        'Non-Uniformed Personnel',
+        'MODE Examiner, RFU-5'
+      );
+      addSignatureBlock(
+        pdfSignatureCenterX,
+        'Certified Correct:',
+        this.signatories.certifiedBy,
+        'BRYAN JOHN D BACCAY',
+        'Police Major',
+        'Chief Disbursement Section, RFU-5'
+      );
+      addSignatureBlock(
+        pdfSignatureRightX,
+        'Noted by:',
+        this.signatories.notedBy,
+        'JENNIFER N BELMONTE',
+        'Police Colonel',
+        'Chief, RFU-5'
+      );
 
       // Save PDF
       pdf.save(`Bond_Report_${period}.pdf`);
