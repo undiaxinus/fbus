@@ -795,6 +795,36 @@ export class BondManagementComponent implements OnInit {
         });
       });
 
+      // Add empty rows for spacing
+      worksheet.addRow([]);
+      worksheet.addRow([]);
+      worksheet.addRow([]);
+
+      // Add signature section
+      const signatureSection = [
+        ['Prepared By:', '', 'Certified Correct:', '', 'Noted by:', ''],
+        ['', '', '', '', '', ''],
+        ['MAY LANNIE B ESPIRITU', '', 'BRYAN JOHN D BACCAY', '', 'JENNIFER N BELMONTE', ''],
+        ['Non-Uniformed Personnel', '', 'Police Major', '', 'Police Colonel', ''],
+        ['MODE Examiner, RFU-5', '', 'Chief Disbursement Section, RFU-5', '', 'Chief, RFU-5', '']
+      ];
+
+      signatureSection.forEach(rowData => {
+        const row = worksheet.addRow(rowData);
+        row.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+
+      // Merge cells for each signature section
+      const lastRowNum = worksheet.rowCount;
+      const signatureStartRow = lastRowNum - 4;
+      
+      // Merge cells for each section (2 columns each)
+      ['A:B', 'E:F', 'I:J'].forEach((cols, index) => {
+        for (let i = 0; i < 5; i++) {
+          worksheet.mergeCells(`${cols.split(':')[0]}${signatureStartRow + i}:${cols.split(':')[1]}${signatureStartRow + i}`);
+        }
+      });
+
       // Generate and save file
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -877,25 +907,25 @@ export class BondManagementComponent implements OnInit {
       });
 
       // Add logos
-      const logoWidth = 20;
-      const logoHeight = 20;
-      const leftLogoX = 30;
-      const rightLogoX = pdf.internal.pageSize.width - 50;
-      const logosY = 15;
+      const pdfLogoWidth = 20;
+      const pdfLogoHeight = 20;
+      const pdfLeftLogoX = 30;
+      const pdfRightLogoX = pdf.internal.pageSize.width - 50;
+      const pdfLogosY = 15;
 
       // Load and add logos
-      const logo1 = await this.getBase64Image('/assets/logo.png');
-      const logo2 = await this.getBase64Image('/assets/finance.png');
-      pdf.addImage(logo1, 'PNG', leftLogoX, logosY, logoWidth, logoHeight);
-      pdf.addImage(logo2, 'PNG', rightLogoX, logosY, logoWidth, logoHeight);
+      const pdfLogo1 = await this.getBase64Image('/assets/logo.png');
+      const pdfLogo2 = await this.getBase64Image('/assets/finance.png');
+      pdf.addImage(pdfLogo1, 'PNG', pdfLeftLogoX, pdfLogosY, pdfLogoWidth, pdfLogoHeight);
+      pdf.addImage(pdfLogo2, 'PNG', pdfRightLogoX, pdfLogosY, pdfLogoWidth, pdfLogoHeight);
 
       // Add headers
       pdf.setFontSize(12);
-      const centerX = pdf.internal.pageSize.width / 2;
-      let currentY = 15;
-      const lineSpacing = 7;
+      const pdfCenterX = pdf.internal.pageSize.width / 2;
+      let pdfCurrentY = 15;
+      const pdfLineSpacing = 7;
 
-      const headers = [
+      const pdfHeaders = [
         'Republic of the Philippines',
         'National Police Commission',
         'PHILIPPINE NATIONAL POLICE',
@@ -906,10 +936,10 @@ export class BondManagementComponent implements OnInit {
         `Period Covered: ${period}`
       ];
 
-      headers.forEach((header, index) => {
+      pdfHeaders.forEach((header) => {
         pdf.setFont('helvetica', 'bold');
-        pdf.text(header, centerX, currentY, { align: 'center' });
-        currentY += lineSpacing;
+        pdf.text(header, pdfCenterX, pdfCurrentY, { align: 'center' });
+        pdfCurrentY += pdfLineSpacing;
       });
 
       // Configure table
@@ -945,7 +975,7 @@ export class BondManagementComponent implements OnInit {
           bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
           bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
         ]),
-        startY: currentY + 5,
+        startY: pdfCurrentY + 5,
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -980,6 +1010,32 @@ export class BondManagementComponent implements OnInit {
 
       // Add table to PDF
       autoTable(pdf, tableConfig);
+
+      // Add signature section
+      const pdfSignatureY = pdf.internal.pageSize.height - 40;
+      const pdfSignatureLeftX = 30;
+      const pdfSignatureCenterX = pdf.internal.pageSize.width / 2;
+      const pdfSignatureRightX = pdf.internal.pageSize.width - 60;
+      const pdfSignatureSpacing = 7;
+
+      // Function to add signature block
+      const addSignatureBlock = (x: number, title: string, name: string, position1: string, position2: string) => {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(title, x, pdfSignatureY, { align: 'center' });
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(name, x, pdfSignatureY + pdfSignatureSpacing * 2, { align: 'center' });
+        
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(position1, x, pdfSignatureY + pdfSignatureSpacing * 3, { align: 'center' });
+        pdf.text(position2, x, pdfSignatureY + pdfSignatureSpacing * 4, { align: 'center' });
+      };
+
+      // Add the three signature blocks
+      addSignatureBlock(pdfSignatureLeftX + 30, 'Prepared By:', 'MAY LANNIE B ESPIRITU', 'Non-Uniformed Personnel', 'MODE Examiner, RFU-5');
+      addSignatureBlock(pdfSignatureCenterX, 'Certified Correct:', 'BRYAN JOHN D BACCAY', 'Police Major', 'Chief Disbursement Section, RFU-5');
+      addSignatureBlock(pdfSignatureRightX, 'Noted by:', 'JENNIFER N BELMONTE', 'Police Colonel', 'Chief, RFU-5');
 
       // Save PDF
       pdf.save(`Bond_Report_${period}.pdf`);
