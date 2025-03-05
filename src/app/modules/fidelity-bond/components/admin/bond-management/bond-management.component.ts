@@ -7,6 +7,10 @@ import { delay, retryWhen, take, tap } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { Workbook, Row, Cell } from 'exceljs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { UserOptions } from 'jspdf-autotable';
 
 interface FbusBond {
   id?: string;
@@ -57,6 +61,18 @@ interface FbusBond {
     }
     .blink-warning {
       animation: blink-warning 1.5s ease-in-out infinite;
+    }
+    
+    @media print {
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .print-table th, .print-table td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: center;
+      }
     }
   `]
 })
@@ -117,6 +133,8 @@ export class BondManagementComponent implements OnInit {
   // Pagination properties
   currentPage = 1;
   itemsPerPage = 10;
+
+  showExportMenu = false;
 
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
@@ -782,19 +800,19 @@ export class BondManagementComponent implements OnInit {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       saveAs(blob, `Bond_Report_${period}.xlsx`);
 
-      await this.logExportActivity();
+      await this.logExportActivity('Excel');
     } catch (error) {
       console.error('Error exporting report:', error);
       this.error = 'Failed to export report. Please try again.';
     }
   }
 
-  private async logExportActivity() {
+  private async logExportActivity(type: string = 'Excel') {
     try {
       const { error: activityError } = await this.supabase.getClient()
         .from('fbus_activities')
         .insert([{
-          action: 'Exported bond report',
+          action: `Exported bond report as ${type}`,
           user_name: await this.getCurrentUserName(),
           created_at: new Date().toISOString()
         }]);
@@ -844,5 +862,133 @@ export class BondManagementComponent implements OnInit {
   // Reset pagination when filters change
   onSearch() {
     this.currentPage = 1;
+  }
+
+  async exportToPDF() {
+    try {
+      const currentDate = new Date();
+      const period = currentDate.toLocaleString('default', { month: 'long' }).toUpperCase() + ' ' + currentDate.getFullYear();
+      
+      // Create PDF in landscape
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // Add logos
+      const logoWidth = 20;
+      const logoHeight = 20;
+      const leftLogoX = 30;
+      const rightLogoX = pdf.internal.pageSize.width - 50;
+      const logosY = 15;
+
+      // Load and add logos
+      const logo1 = await this.getBase64Image('/assets/logo.png');
+      const logo2 = await this.getBase64Image('/assets/finance.png');
+      pdf.addImage(logo1, 'PNG', leftLogoX, logosY, logoWidth, logoHeight);
+      pdf.addImage(logo2, 'PNG', rightLogoX, logosY, logoWidth, logoHeight);
+
+      // Add headers
+      pdf.setFontSize(12);
+      const centerX = pdf.internal.pageSize.width / 2;
+      let currentY = 15;
+      const lineSpacing = 7;
+
+      const headers = [
+        'Republic of the Philippines',
+        'National Police Commission',
+        'PHILIPPINE NATIONAL POLICE',
+        'Regional Finance Unit-5',
+        'Camp BGen Simeon A Ola, Legacy City',
+        'List of NSU PNP Accountable Officers/Employees',
+        'Other Accountable Officers/Finance PNCOs',
+        `Period Covered: ${period}`
+      ];
+
+      headers.forEach((header, index) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(header, centerX, currentY, { align: 'center' });
+        currentY += lineSpacing;
+      });
+
+      // Configure table
+      const tableConfig: UserOptions = {
+        head: [
+          [
+            { content: 'NR', rowSpan: 2 },
+            { content: 'RANK', rowSpan: 2 },
+            { content: 'NAME', rowSpan: 2 },
+            { content: 'DESIGNATION', rowSpan: 2 },
+            { content: 'UNIT', rowSpan: 2 },
+            { content: 'MCA', rowSpan: 2 },
+            { content: 'FIDELITY BOND', colSpan: 5 }
+          ],
+          [
+            'AMOUNT\nOF BOND',
+            'BOND\nPREMIUM',
+            'RISK NO.',
+            'EFFECTIVITY\nDATE',
+            'DATE OF\nCANCELLATION'
+          ]
+        ],
+        body: this.activeBonds.map((bond, index) => [
+          (index + 1).toString(),
+          bond.rank,
+          `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
+          bond.designation,
+          bond.unit_office,
+          this.formatCurrency(bond.mca),
+          this.formatCurrency(bond.amount_of_bond),
+          this.formatCurrency(bond.bond_premium),
+          bond.risk_no,
+          bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
+          bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
+        ]),
+        startY: currentY + 5,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          lineWidth: 0.1,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: {
+          fillColor: [255, 255, 255],
+          textColor: 0,
+          fontSize: 8,
+          fontStyle: 'bold',
+          halign: 'center',
+          valign: 'middle'
+        },
+        bodyStyles: {
+          halign: 'center'
+        } as const,
+        columnStyles: {
+          0: { cellWidth: 10 },  // NR
+          1: { cellWidth: 15 },  // RANK
+          2: { cellWidth: 40 },  // NAME
+          3: { cellWidth: 30 },  // DESIGNATION
+          4: { cellWidth: 30 },  // UNIT
+          5: { cellWidth: 25 },  // MCA
+          6: { cellWidth: 25 },  // AMOUNT OF BOND
+          7: { cellWidth: 25 },  // BOND PREMIUM
+          8: { cellWidth: 25 },  // RISK NO
+          9: { cellWidth: 25 },  // EFFECTIVITY DATE
+          10: { cellWidth: 25 }  // DATE OF CANCELLATION
+        }
+      };
+
+      // Add table to PDF
+      autoTable(pdf, tableConfig);
+
+      // Save PDF
+      pdf.save(`Bond_Report_${period}.pdf`);
+
+      // Log the activity
+      await this.logExportActivity('PDF');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      this.error = 'Failed to export PDF. Please try again.';
+    }
   }
 }

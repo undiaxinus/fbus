@@ -13,6 +13,7 @@ import { UserRequestsComponent } from './components/user/requests/user-requests.
 import { UserNotificationsComponent } from './components/user/notifications/user-notifications.component';
 import { UserProfileComponent } from './components/user/profile/user-profile.component';
 import { SidebarComponent } from './components/shared/sidebar/sidebar.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -64,6 +65,7 @@ const routes: Routes = [
   ],
   imports: [
     CommonModule,
+    SharedModule,
     RouterModule.forChild(routes),
     FormsModule,
     ReactiveFormsModule,
