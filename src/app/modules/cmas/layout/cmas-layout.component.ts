@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -36,9 +36,9 @@ import { AuthService } from '../../../core/services/auth.service';
               <!-- User Profile -->
               <div class="flex items-center space-x-3">
                 <div class="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold shadow-sm">
-                  {{userName.charAt(0).toUpperCase()}}
+                  {{userName && userName.length > 0 ? userName.charAt(0).toUpperCase() : 'U'}}
                 </div>
-                <span class="text-sm font-medium text-gray-700">{{userName}}</span>
+                <span class="text-sm font-medium text-gray-700">{{userName || 'User'}}</span>
               </div>
             </div>
           </div>
@@ -55,15 +55,27 @@ import { AuthService } from '../../../core/services/auth.service';
 export class CmasLayoutComponent implements OnInit {
   userRole: string = '';
   userName: string = '';
+  private isBrowser: boolean;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      const user = JSON.parse(currentUser);
-      this.userRole = user.role;
-      this.userName = user.name;
+    if (this.isBrowser) {
+      try {
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+          const user = JSON.parse(currentUser);
+          this.userRole = user.role || user.system_role || '';
+          this.userName = user.name || user.username || 'User';
+        }
+      } catch (error) {
+        console.error('Error accessing or parsing currentUser from localStorage:', error);
+      }
     }
   }
 } 

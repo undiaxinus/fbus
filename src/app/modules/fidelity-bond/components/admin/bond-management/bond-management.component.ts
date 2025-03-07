@@ -98,7 +98,7 @@ export class BondManagementComponent implements OnInit {
   error: string | null = null;
 
   departments: string[] = [];
-  statuses: string[] = ['VALID', 'EXPIRE SOON', 'EXPIRED'];
+  statuses: string[] = ['VALID', 'EXPIRE SOON'];
 
   parseInt = Number.parseInt;
 
@@ -151,6 +151,13 @@ export class BondManagementComponent implements OnInit {
     notedBy?: FbusSignatory;
   } = {};
 
+  showExpiredBondsModal: boolean = false;
+  expiredBonds: FbusBond[] = [];
+  showRenewalModal: boolean = false;
+  bondToRenew: FbusBond | null = null;
+  today: Date = new Date();
+  oneYearFromNow: Date = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
   }
@@ -166,6 +173,10 @@ export class BondManagementComponent implements OnInit {
 
   get paginatedBonds() {
     return this.filteredBonds.slice(this.startIndex, this.endIndex);
+  }
+
+  get filteredExpiredBonds(): FbusBond[] {
+    return this.activeBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRED');
   }
 
   constructor(private supabase: SupabaseService) {}
@@ -282,11 +293,13 @@ export class BondManagementComponent implements OnInit {
       }
 
       if (data) {
+        this.bonds = data;
         this.activeBonds = data.filter(bond => !bond.is_archived);
         this.archivedBonds = data.filter(bond => bond.is_archived);
+        this.expiredBonds = this.filteredExpiredBonds;
       }
     } catch (error: any) {
-      throw error; // Propagate error to ngOnInit for centralized error handling
+      throw error;
     }
   }
 
@@ -412,6 +425,9 @@ export class BondManagementComponent implements OnInit {
     // Apply status filter
     if (this.selectedStatus !== 'all') {
       bonds = bonds.filter(bond => this.calculateBondStatus(bond) === this.selectedStatus);
+    } else {
+      // Exclude expired bonds from main table
+      bonds = bonds.filter(bond => this.calculateBondStatus(bond) !== 'EXPIRED');
     }
 
     // Apply department filter
@@ -1189,6 +1205,58 @@ export class BondManagementComponent implements OnInit {
     } catch (error) {
       console.error('Error exporting PDF:', error);
       this.error = 'Failed to export PDF. Please try again.';
+    }
+  }
+
+  async onRenewBond(bond: FbusBond) {
+    this.bondToRenew = bond;
+    this.today = new Date();
+    this.oneYearFromNow = new Date(this.today);
+    this.oneYearFromNow.setFullYear(this.today.getFullYear() + 1);
+    this.showRenewalModal = true;
+  }
+
+  async confirmRenewalBond() {
+    try {
+      if (!this.bondToRenew) return;
+
+      // Create a new bond object with renewed dates
+      const renewedBond: FbusBond = {
+        ...this.bondToRenew,
+        effective_date: this.today.toISOString().split('T')[0], // Set to today
+        date_of_cancellation: this.oneYearFromNow.toISOString().split('T')[0], // Set to 1 year from today
+        status: 'VALID',
+        days_remaning: '365',
+        updated_at: new Date().toISOString()
+      };
+
+      // Update the bond in the database
+      const { error } = await this.supabase.getClient()
+        .from('fbus_list')
+        .update(renewedBond)
+        .eq('id', renewedBond.id);
+
+      if (error) throw error;
+
+      // Log the activity
+      const userName = await this.getCurrentUserName();
+      await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert({
+          action: `Bond renewed for ${renewedBond.first_name} ${renewedBond.last_name}`,
+          user: userName,
+          timestamp: new Date().toISOString()
+        });
+
+      // Reload bonds and close modal
+      await this.loadBonds();
+      this.showRenewalModal = false;
+      this.bondToRenew = null;
+      this.showExpiredBondsModal = false;
+
+    } catch (error) {
+      console.error('Error renewing bond:', error);
+      this.error = 'Failed to renew bond. Please try again.';
     }
   }
 }

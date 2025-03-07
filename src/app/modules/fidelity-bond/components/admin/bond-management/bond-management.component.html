@@ -1,62 +1,114 @@
 <!-- Header -->
 <div class="min-h-screen bg-gray-50/30">
   <div class="px-4 sm:px-6 lg:px-8 py-8 max-w-[98rem] mx-auto space-y-8">
-    <div class="sm:flex sm:items-center sm:justify-between bg-white p-6 rounded-xl shadow-sm">
-      <div class="sm:flex-auto">
-        <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">Bond Management</h1>
-        <p class="mt-2 text-base text-gray-600">Manage employee fidelity bonds and their status</p>
-      </div>
-      <div class="mt-4 sm:mt-0 sm:flex space-x-3">
-        <!-- Archive Modal Button -->
-        <button type="button" (click)="showArchivedModal = true"
-          class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-gray-700">
-          <svg class="h-5 w-5 text-amber-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
-          </svg>
-          View Archived Bonds
-          <span class="ml-1.5 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-amber-800 bg-amber-100 rounded-full">
-            {{archivedBonds.length}}
-          </span>
-        </button>
-
-        <!-- Add New Bond Button -->
-        <button type="button" (click)="showAddBondModal = true"
-          class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-          <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-          </svg>
-          Add New Bond
-        </button>
-
-        <!-- Export Dropdown -->
-        <div class="relative" (clickOutside)="showExportMenu = false">
-          <button (click)="showExportMenu = !showExportMenu" type="button" class="flex items-center justify-center px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+    <div class="flex flex-col space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-blue-600">Bond Management</h1>
+          <p class="text-sm text-gray-600">Manage employee fidelity bonds and their status</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <!-- Expired Bonds Button -->
+          <button type="button" (click)="showExpiredBondsModal = true"
+            class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            <svg class="h-5 w-5 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            Export Report
-            <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
+            Expired Bonds
+            <span class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-red-800 bg-red-100 rounded-full">
+              {{expiredBonds.length}}
+            </span>
           </button>
-          <!-- Dropdown Menu -->
-          <div *ngIf="showExportMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
-            <div class="py-1">
-              <button (click)="exportReport(); showExportMenu = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <svg class="w-4 h-4 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Export to Excel
-              </button>
-              <button (click)="exportToPDF(); showExportMenu = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <svg class="w-4 h-4 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                </svg>
-                Export to PDF
-              </button>
+
+          <!-- Archive Modal Button -->
+          <button type="button" (click)="showArchivedModal = true"
+            class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            <svg class="h-5 w-5 text-amber-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+            </svg>
+            View Archived Bonds
+            <span class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-amber-800 bg-amber-100 rounded-full">
+              {{archivedBonds.length}}
+            </span>
+          </button>
+
+          <!-- Add New Bond Button -->
+          <button type="button" (click)="showAddBondModal = true"
+            class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Add New Bond
+          </button>
+
+          <!-- Export Dropdown -->
+          <div class="relative">
+            <button (click)="showExportMenu = !showExportMenu" type="button" 
+              class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-green-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+              <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Export Report
+              <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <!-- Dropdown Menu -->
+            <div *ngIf="showExportMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
+              <div class="py-1">
+                <button (click)="exportReport(); showExportMenu = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <svg class="w-4 h-4 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  Export to Excel
+                </button>
+                <button (click)="exportToPDF(); showExportMenu = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <svg class="w-4 h-4 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                  Export to PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="flex items-center space-x-4">
+        <div class="flex-1">
+          <div class="relative">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <input type="text" [(ngModel)]="searchTerm" name="search" id="search"
+              class="block w-full rounded-lg border-gray-200 pl-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Search by name, unit, risk no...">
+          </div>
+        </div>
+
+        <select [(ngModel)]="selectedStatus" name="status" id="status"
+          class="block rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+          <option value="all">All Statuses</option>
+          <option value="VALID">VALID</option>
+          <option value="EXPIRE SOON">EXPIRE SOON</option>
+        </select>
+
+        <select [(ngModel)]="selectedDepartment" name="department" id="department"
+          class="block rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+          <option value="all">All Departments</option>
+          <option *ngFor="let unit of availableUnits" [value]="unit.units">{{unit.units}}</option>
+        </select>
+
+        <button type="button" (click)="clearFilters()"
+          class="inline-flex items-center justify-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+          <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Clear Filters
+        </button>
       </div>
     </div>
 
@@ -91,52 +143,6 @@
             </svg>
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Improved Search and Filters -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      <!-- Search -->
-      <div class="lg:col-span-2">
-        <div class="relative">
-          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <input type="text" [(ngModel)]="searchTerm" name="search" id="search"
-            class="block w-full rounded-lg border-gray-200 pl-10 focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition-colors duration-200"
-            placeholder="Search by name, unit, risk no...">
-        </div>
-      </div>
-
-      <!-- Status Filter -->
-      <div>
-        <select [(ngModel)]="selectedStatus" name="status" id="status"
-          class="block w-full rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition-colors duration-200">
-          <option value="all">All Statuses</option>
-          <option *ngFor="let status of statuses" [value]="status">{{status}}</option>
-        </select>
-      </div>
-
-      <!-- Department Filter -->
-      <div>
-        <select [(ngModel)]="selectedDepartment" name="department" id="department"
-          class="block w-full rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition-colors duration-200">
-          <option value="all">All Departments</option>
-          <option *ngFor="let unit of availableUnits" [value]="unit.units">{{unit.units}}</option>
-        </select>
-      </div>
-
-      <!-- Clear Filters Button -->
-      <div>
-        <button type="button" (click)="clearFilters()"
-          class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
-          <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-          Clear Filters
-        </button>
       </div>
     </div>
 
@@ -310,6 +316,128 @@
               </svg>
             </button>
           </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Expired Bonds Modal -->
+<div *ngIf="showExpiredBondsModal" class="relative z-10" aria-labelledby="expired-modal-title" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-7xl sm:p-6">
+        <!-- Modal Header -->
+        <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+          <button type="button" (click)="showExpiredBondsModal = false"
+            class="rounded-lg bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 p-1 hover:bg-gray-50 transition-all duration-200">
+            <span class="sr-only">Close</span>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Modal Title -->
+          <div>
+            <div class="flex items-center space-x-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-900" id="expired-modal-title">Expired Bonds</h2>
+                <p class="mt-1 text-sm text-gray-500">View and manage expired employee fidelity bonds</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expired Bonds Table -->
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50/50">
+                  <tr>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Employee Details</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Unit/Office</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Bond Details</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">Expiry Date</th>
+                    <th scope="col" class="px-3 py-3.5 text-center text-xs font-semibold text-gray-900 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                  <!-- Loading State -->
+                  <tr *ngIf="isLoading">
+                    <td colspan="6" class="px-3 py-4 text-sm text-gray-500 text-center">
+                      <div class="flex justify-center items-center space-x-2">
+                        <div class="animate-spin h-5 w-5 text-blue-600">
+                          <svg class="h-full w-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        </div>
+                        <span>Loading expired bonds...</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- No Results -->
+                  <tr *ngIf="!isLoading && expiredBonds.length === 0">
+                    <td colspan="6" class="px-3 py-8 text-sm text-gray-500 text-center">
+                      <div class="max-w-sm mx-auto">
+                        <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No expired bonds found</h3>
+                        <p class="mt-1 text-sm text-gray-500">All bonds are currently valid</p>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Bond Rows -->
+                  <tr *ngFor="let bond of expiredBonds" class="hover:bg-gray-50/50 transition-all duration-150">
+                    <td class="px-3 py-4 text-sm">
+                      <div class="font-medium text-gray-900">{{bond.first_name}} {{bond.middle_name}} {{bond.last_name}}</div>
+                      <div class="text-gray-500 text-xs mt-0.5">{{bond.contact_no}}</div>
+                    </td>
+                    <td class="px-3 py-4 text-sm text-gray-500">
+                      <div>{{bond.unit_office}}</div>
+                      <div class="text-xs mt-0.5">{{bond.rank}}</div>
+                    </td>
+                    <td class="px-3 py-4 text-sm">
+                      <div class="text-gray-900">Risk No: {{bond.risk_no}}</div>
+                      <div class="text-gray-500 text-xs mt-0.5">Bond Amount: {{formatCurrency(bond.amount_of_bond)}}</div>
+                    </td>
+                    <td class="px-3 py-4 text-sm">
+                      <span [class]="'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ' + getStatusColor(bond)">
+                        <span class="w-1 h-1 rounded-full mr-1" [class]="getStatusColor(bond).includes('green') ? 'bg-green-400' : getStatusColor(bond).includes('yellow') ? 'bg-yellow-400' : 'bg-red-400'"></span>
+                        {{calculateBondStatus(bond)}}
+                      </span>
+                    </td>
+                    <td class="px-3 py-4 text-sm text-gray-500">
+                      {{bond.date_of_cancellation | date:'MMM d, y'}}
+                    </td>
+                    <td class="px-3 py-4 text-sm text-center">
+                      <div class="flex justify-center space-x-2">
+                        <button type="button" (click)="onRenewBond(bond)"
+                          class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200">
+                          <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                          </svg>
+                          Renew
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -889,13 +1017,128 @@
               Close
             </button>
             <button type="button" (click)="onEditBond(selectedBond)"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
               <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
               Edit Bond
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bond Renewal Modal -->
+<div *ngIf="showRenewalModal && bondToRenew" class="relative z-10" aria-labelledby="renewal-modal" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl sm:p-6">
+        <!-- Modal Header -->
+        <div class="absolute right-0 top-0 pr-4 pt-4">
+          <button type="button" (click)="showRenewalModal = false"
+            class="rounded-lg bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 p-1 hover:bg-gray-50 transition-all duration-200">
+            <span class="sr-only">Close</span>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="sm:flex sm:items-start">
+          <!-- Icon -->
+          <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </div>
+
+          <!-- Content -->
+          <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+            <h3 class="text-xl font-semibold leading-6 text-gray-900" id="renewal-modal">Renew Bond</h3>
+            
+            <!-- Description -->
+            <div class="mt-3">
+              <p class="text-sm text-gray-500">
+                Are you sure you want to renew this bond? This will extend the bond's validity for one year from today.
+              </p>
+            </div>
+
+            <!-- Bond Details Card -->
+            <div class="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div class="space-y-3">
+                <!-- Employee Info -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700">Employee Information</h4>
+                  <div class="mt-1 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <span class="text-gray-500">Name:</span>
+                      <p class="font-medium text-gray-900">{{bondToRenew.first_name}} {{bondToRenew.middle_name}} {{bondToRenew.last_name}}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">Rank:</span>
+                      <p class="font-medium text-gray-900">{{bondToRenew.rank || 'N/A'}}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">Unit/Office:</span>
+                      <p class="font-medium text-gray-900">{{bondToRenew.unit_office || 'N/A'}}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">Contact:</span>
+                      <p class="font-medium text-gray-900">{{bondToRenew.contact_no || 'N/A'}}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Renewal Info -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700">Renewal Details</h4>
+                  <div class="mt-1 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <span class="text-gray-500">Current Expiry:</span>
+                      <p class="font-medium text-gray-900">{{bondToRenew.date_of_cancellation | date:'mediumDate'}}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">New Effective Date:</span>
+                      <p class="font-medium text-green-600">{{today | date:'mediumDate'}}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">New Expiry Date:</span>
+                      <p class="font-medium text-green-600">{{oneYearFromNow | date:'mediumDate'}}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">New Status:</span>
+                      <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20">
+                        <span class="w-1 h-1 rounded-full mr-1 bg-green-400"></span>
+                        VALID
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
+          <button type="button"
+            (click)="confirmRenewalBond()"
+            class="inline-flex w-full justify-center items-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 sm:w-auto transition-all duration-200">
+            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Confirm Renewal
+          </button>
+          <button type="button"
+            (click)="showRenewalModal = false"
+            class="mt-3 inline-flex w-full justify-center items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:w-auto transition-all duration-200">
+            Cancel
+          </button>
         </div>
       </div>
     </div>

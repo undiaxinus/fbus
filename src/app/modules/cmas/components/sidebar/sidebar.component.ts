@@ -1,5 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -34,40 +34,46 @@ interface NavSection {
       <!-- Navigation Menu -->
       <nav class="flex-1 px-4 py-6">
         <!-- Menu Sections -->
-        <div *ngFor="let section of getRoleBasedSections()" class="mb-6">
-          <div class="mb-4 px-2">
-            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{section.title}}</h2>
-          </div>
-          
-          <ul class="space-y-1.5">
-            <li *ngFor="let item of section.items">
-              <a [routerLink]="[item.route]"
-                 routerLinkActive="bg-[#2a2a3c] text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-8 before:w-1 before:bg-blue-500 before:rounded-r"
-                 [routerLinkActiveOptions]="{exact: true}"
-                 class="flex items-center px-3 py-2.5 text-gray-400 hover:text-white rounded-lg relative overflow-hidden hover:bg-[#2a2a3c] transition-all duration-300 group">
-                <div class="flex items-center w-full relative z-10">
-                  <div class="p-2 rounded-lg bg-[#1e1e2d] group-hover:bg-white/5 transition-colors duration-300">
-                    <svg class="h-[22px] w-[22px] transform group-hover:scale-110 transition-all duration-300" 
-                         fill="none" 
-                         stroke="currentColor" 
-                         viewBox="0 0 24 24">
-                      <path stroke-linecap="round" 
-                            stroke-linejoin="round" 
-                            stroke-width="1.75" 
-                            [attr.d]="getIconPath(item.icon)"/>
-                    </svg>
+        <div *ngIf="getRoleBasedSections().length > 0">
+          <div *ngFor="let section of getRoleBasedSections()" class="mb-6">
+            <div class="mb-4 px-2">
+              <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{section.title}}</h2>
+            </div>
+            
+            <ul class="space-y-1.5">
+              <li *ngFor="let item of section.items">
+                <a [routerLink]="[item.route]"
+                   routerLinkActive="bg-[#2a2a3c] text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-8 before:w-1 before:bg-blue-500 before:rounded-r"
+                   [routerLinkActiveOptions]="{exact: true}"
+                   class="flex items-center px-3 py-2.5 text-gray-400 hover:text-white rounded-lg relative overflow-hidden hover:bg-[#2a2a3c] transition-all duration-300 group">
+                  <div class="flex items-center w-full relative z-10">
+                    <div class="p-2 rounded-lg bg-[#1e1e2d] group-hover:bg-white/5 transition-colors duration-300">
+                      <svg class="h-[22px] w-[22px] transform group-hover:scale-110 transition-all duration-300" 
+                           fill="none" 
+                           stroke="currentColor" 
+                           viewBox="0 0 24 24">
+                        <path stroke-linecap="round" 
+                              stroke-linejoin="round" 
+                              stroke-width="1.75" 
+                              [attr.d]="getIconPath(item.icon)"/>
+                      </svg>
+                    </div>
+                    <span class="ml-3 font-medium tracking-wide text-sm group-hover:translate-x-1 transition-transform duration-300">
+                      {{ item.title }}
+                    </span>
+                    <span *ngIf="item.badge" 
+                          class="ml-auto bg-blue-500/10 text-blue-500 text-xs font-medium px-2 py-0.5 rounded-full">
+                      {{item.badge}}
+                    </span>
                   </div>
-                  <span class="ml-3 font-medium tracking-wide text-sm group-hover:translate-x-1 transition-transform duration-300">
-                    {{ item.title }}
-                  </span>
-                  <span *ngIf="item.badge" 
-                        class="ml-auto bg-blue-500/10 text-blue-500 text-xs font-medium px-2 py-0.5 rounded-full">
-                    {{item.badge}}
-                  </span>
-                </div>
-              </a>
-            </li>
-          </ul>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div *ngIf="getRoleBasedSections().length === 0" class="px-3 py-4 text-gray-400">
+          <p>No navigation items available for this role.</p>
+          <p class="mt-2 text-sm">Current role: {{currentRole || 'Not set'}}</p>
         </div>
       </nav>
 
@@ -103,16 +109,28 @@ interface NavSection {
 export class SidebarComponent implements OnInit {
   @Input() currentRole: string = '';
   @Input() userName: string = '';
+  private isBrowser: boolean;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit() {
-    if (!this.currentRole || !this.userName) {
-      const currentUser = localStorage.getItem('currentUser');
-      if (currentUser) {
-        const user = JSON.parse(currentUser);
-        this.currentRole = user.role;
-        this.userName = user.name;
+    // Make sure we have the current role and username
+    if ((!this.currentRole || !this.userName) && this.isBrowser) {
+      try {
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+          const user = JSON.parse(currentUser);
+          this.currentRole = user.role || user.system_role || '';
+          this.userName = user.name || user.username || 'User';
+          console.log('Current user role:', this.currentRole);
+        }
+      } catch (error) {
+        console.error('Error accessing or parsing currentUser from localStorage:', error);
       }
     }
   }
@@ -145,68 +163,117 @@ export class SidebarComponent implements OnInit {
   roleBasedNavigation: { [key: string]: NavSection[] } = {
     duty_pnco: [
       {
-        title: 'Overview',
+        title: 'Communication Monitoring System',
         items: [
-          { title: 'Dashboard', route: '/cmas/duty-pnco', icon: 'home' },
+          { title: 'Dashboard', route: '/cmas/duty-pnco', icon: 'home' }
+        ]
+      },
+      {
+        title: 'Duty Management',
+        items: [
           { title: 'Duty Roster', route: '/cmas/duty-pnco/roster', icon: 'calendar' },
-          { title: 'Reports', route: '/cmas/duty-pnco/reports', icon: 'document-text' }
+          { title: 'Schedules', route: '/cmas/duty-pnco/schedules', icon: 'clock' },
+          { title: 'Assignments', route: '/cmas/duty-pnco/assignments', icon: 'clipboard-check' }
+        ]
+      },
+      {
+        title: 'Communication',
+        items: [
+          { title: 'Messages', route: '/cmas/duty-pnco/messages', icon: 'chat-alt' },
+          { title: 'Reports', route: '/cmas/duty-pnco/reports', icon: 'document-text' },
+          { title: 'Alerts', route: '/cmas/duty-pnco/alerts', icon: 'bell' }
         ]
       }
     ],
     section_personnel: [
       {
-        title: 'Overview',
+        title: 'Communication Monitoring System',
         items: [
-          { title: 'Dashboard', route: '/cmas/section-personnel', icon: 'home' },
+          { title: 'Dashboard', route: '/cmas/section-personnel', icon: 'home' }
+        ]
+      },
+      {
+        title: 'Task Management',
+        items: [
           { title: 'Tasks', route: '/cmas/section-personnel/tasks', icon: 'clipboard-list' },
-          { title: 'Documents', route: '/cmas/section-personnel/documents', icon: 'folder' }
+          { title: 'Documents', route: '/cmas/section-personnel/documents', icon: 'folder' },
+          { title: 'Approvals', route: '/cmas/section-personnel/approvals', icon: 'check-circle' }
         ]
       },
       {
         title: 'Team',
         items: [
           { title: 'Members', route: '/cmas/section-personnel/team', icon: 'users' },
-          { title: 'Schedule', route: '/cmas/section-personnel/schedule', icon: 'calendar' }
+          { title: 'Schedule', route: '/cmas/section-personnel/schedule', icon: 'calendar' },
+          { title: 'Messaging', route: '/cmas/section-personnel/messaging', icon: 'chat' }
         ]
       }
     ],
     field_personnel: [
       {
-        title: 'Operations',
+        title: 'Communication Monitoring System',
         items: [
-          { title: 'Dashboard', route: '/cmas/field-personnel', icon: 'home' },
-          { title: 'Tasks', route: '/cmas/field-personnel/tasks', icon: 'clipboard-check' },
-          { title: 'Location', route: '/cmas/field-personnel/location', icon: 'map' }
+          { title: 'Dashboard', route: '/cmas/field-personnel', icon: 'home' }
         ]
       },
       {
-        title: 'Reports',
+        title: 'Field Operations',
+        items: [
+          { title: 'Tasks', route: '/cmas/field-personnel/tasks', icon: 'clipboard-check' },
+          { title: 'Location', route: '/cmas/field-personnel/location', icon: 'map' },
+          { title: 'Equipment', route: '/cmas/field-personnel/equipment', icon: 'device-mobile' }
+        ]
+      },
+      {
+        title: 'Reporting',
         items: [
           { title: 'Daily Reports', route: '/cmas/field-personnel/reports', icon: 'document-text' },
-          { title: 'Incidents', route: '/cmas/field-personnel/incidents', icon: 'exclamation' }
+          { title: 'Incidents', route: '/cmas/field-personnel/incidents', icon: 'exclamation' },
+          { title: 'Status Updates', route: '/cmas/field-personnel/status', icon: 'refresh' }
         ]
       }
     ],
     supervisor: [
       {
-        title: 'Overview',
+        title: 'Communication Monitoring System',
         items: [
-          { title: 'Dashboard', route: '/cmas/supervisor', icon: 'home' },
-          { title: 'Team Overview', route: '/cmas/supervisor/team', icon: 'users' }
+          { title: 'Dashboard', route: '/cmas/supervisor', icon: 'home' }
+        ]
+      },
+      {
+        title: 'Team Management',
+        items: [
+          { title: 'Team Overview', route: '/cmas/supervisor/team', icon: 'users' },
+          { title: 'Assignments', route: '/cmas/supervisor/assignments', icon: 'clipboard-list' },
+          { title: 'Approvals', route: '/cmas/supervisor/approvals', icon: 'check' }
         ]
       },
       {
         title: 'Monitoring',
         items: [
           { title: 'Performance', route: '/cmas/supervisor/performance', icon: 'chart-bar' },
-          { title: 'Reports', route: '/cmas/supervisor/reports', icon: 'document-report' }
+          { title: 'Reports', route: '/cmas/supervisor/reports', icon: 'document-report' },
+          { title: 'Analytics', route: '/cmas/supervisor/analytics', icon: 'chart-pie' }
         ]
       }
     ]
   };
 
   getRoleBasedSections(): NavSection[] {
-    return this.roleBasedNavigation[this.currentRole] || [];
+    // Check for admin role first
+    if (this.currentRole === 'cmas_admin') {
+      return this.adminSections;
+    }
+    
+    // If we have defined navigation for this role, return it
+    if (this.roleBasedNavigation[this.currentRole]) {
+      return this.roleBasedNavigation[this.currentRole];
+    }
+    
+    // For any undefined roles, return an empty array
+    // We could also provide a default navigation for unknown roles here
+    console.warn(`Navigation not defined for role: ${this.currentRole}`);
+    return [];
   }
 
   getIconPath(icon: string): string {
@@ -225,7 +292,16 @@ export class SidebarComponent implements OnInit {
       map: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7',
       'chart-bar': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
       'document-report': 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      exclamation: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+      exclamation: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+      clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+      bell: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
+      'chat-alt': 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z',
+      chat: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+      'check-circle': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+      check: 'M5 13l4 4L19 7',
+      'device-mobile': 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z',
+      refresh: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+      'chart-pie': 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z'
     };
     return iconPaths[icon] || '';
   }
