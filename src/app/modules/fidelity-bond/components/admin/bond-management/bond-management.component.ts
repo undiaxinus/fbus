@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { SupabaseService } from '../../../../../services/supabase.service';
+import { StorageService } from '../../../services/storage.service';
 import { firstValueFrom } from 'rxjs';
 import { delay, retryWhen, take, tap } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
@@ -37,6 +38,9 @@ interface FbusBond {
   dates?: string;
   is_archived: boolean;
   updated_at?: string;
+  profile_image_url?: string;
+  designation_image_url?: string;
+  risk_image_url?: string;
 }
 
 interface FbusSignatory {
@@ -158,6 +162,16 @@ export class BondManagementComponent implements OnInit {
   today: Date = new Date();
   oneYearFromNow: Date = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
 
+  profileImagePreview: string | null = null;
+  designationImagePreview: string | null = null;
+  riskImagePreview: string | null = null;
+  selectedProfileImage: File | null = null;
+  selectedDesignationImage: File | null = null;
+  selectedRiskImage: File | null = null;
+
+  showFullSizeImage: boolean = false;
+  selectedImageUrl: string | null = null;
+
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
   }
@@ -179,7 +193,10 @@ export class BondManagementComponent implements OnInit {
     return this.activeBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRED');
   }
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService,
+    private storageService: StorageService,
+  ) {}
 
   private getEmptyBond(): FbusBond {
     return {
@@ -440,68 +457,57 @@ export class BondManagementComponent implements OnInit {
 
   async onSubmitBond(form: NgForm) {
     if (!form.valid) return;
-    
+
     this.isSubmitting = true;
-    this.error = '';
+    this.error = null;
 
     try {
-      let response;
-      const bondData = { ...this.newBond };
-
-      if (this.isEditMode) {
-        // Update existing bond
-        response = await this.supabase.getClient()
-          .from('fbus_list')
-          .update(bondData)
-          .eq('id', this.newBond.id)
-          .select();
-      } else {
-        // Create new bond
-        response = await this.supabase.getClient()
-          .from('fbus_list')
-          .insert([bondData])
-          .select();
-      }
-
-      const { data, error } = response;
-      if (error) throw error;
-
-      if (data) {
-        // Log the activity in fbus_activities
-        const { error: activityError } = await this.supabase.getClient()
-          .from('fbus_activities')
-          .insert([{
-            action: this.isEditMode 
-              ? `Updated bond for ${bondData.first_name} ${bondData.last_name}`
-              : `Added new bond for ${bondData.first_name} ${bondData.last_name}`,
-            user_name: await this.getCurrentUserName(),
-            created_at: new Date().toISOString()
-          }]);
-
-        if (activityError) throw activityError;
-
-        // Update local state
-        if (this.isEditMode) {
-          const index = this.activeBonds.findIndex(b => b.id === this.newBond.id);
-          if (index !== -1) {
-            this.activeBonds[index] = data[0];
-          }
-        } else {
-          this.activeBonds = [data[0], ...this.activeBonds];
+      // Upload images if selected
+      if (this.selectedProfileImage) {
+        try {
+          const profileUrl = await this.storageService.uploadProfileImage(this.selectedProfileImage);
+          this.newBond.profile_image_url = profileUrl;
+        } catch (error) {
+          console.error('Error uploading profile image:', error);
+          throw new Error('Failed to upload profile image. Please try again.');
         }
-
-        // Reset form and state
-        this.showAddBondModal = false;
-        this.isEditMode = false;
-        this.newBond = this.getEmptyBond();
-        form.resetForm();
-        
-        // Reload bonds to ensure consistency
-        await this.loadBonds();
       }
+
+      if (this.selectedDesignationImage) {
+        try {
+          const designationUrl = await this.storageService.uploadDesignationImage(this.selectedDesignationImage);
+          this.newBond.designation_image_url = designationUrl;
+        } catch (error) {
+          console.error('Error uploading designation image:', error);
+          throw new Error('Failed to upload designation image. Please try again.');
+        }
+      }
+
+      if (this.selectedRiskImage) {
+        try {
+          const riskUrl = await this.storageService.uploadRiskImage(this.selectedRiskImage);
+          this.newBond.risk_image_url = riskUrl;
+        } catch (error) {
+          console.error('Error uploading risk image:', error);
+          throw new Error('Failed to upload risk image. Please try again.');
+        }
+      }
+
+      // Continue with existing bond submission logic
+      if (this.isEditMode) {
+        await this.updateBond();
+      } else {
+        await this.createBond();
+      }
+
+      // Reset form and close modal only if everything succeeds
+      this.resetForm();
+      this.showAddBondModal = false;
+      await this.loadBonds();
+
     } catch (error: any) {
-      console.error('Error saving bond:', error);
-      this.error = error?.message || 'Failed to save bond. Please try again.';
+      console.error('Error submitting bond:', error);
+      this.error = error?.message || 'Failed to submit bond. Please try again.';
     } finally {
       this.isSubmitting = false;
     }
@@ -650,11 +656,16 @@ export class BondManagementComponent implements OnInit {
         this.archivedBonds.unshift(archivedBond);
       }
 
-      this.showArchiveConfirmModal = false;
-      this.bondToArchive = null;
-      
       // Clear any existing error
       this.error = null;
+
+      // Cleanup image URLs if bond exists
+      if (this.bondToArchive) {
+        await this.cleanupImageUrls(this.bondToArchive);
+      }
+
+      this.showArchiveConfirmModal = false;
+      this.bondToArchive = null;
     } catch (error: any) {
       console.error('Error archiving bond:', error);
       const errorMessage = error?.message || error?.error_description || 'Failed to archive bond. Please try again.';
@@ -1257,6 +1268,155 @@ export class BondManagementComponent implements OnInit {
     } catch (error) {
       console.error('Error renewing bond:', error);
       this.error = 'Failed to renew bond. Please try again.';
+    }
+  }
+
+  async onProfileImageSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 5242880) { // 5MB
+        this.error = 'Profile image size must be less than 5MB';
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        this.error = 'Only image files are allowed for profile picture';
+        return;
+      }
+      this.selectedProfileImage = file;
+      this.profileImagePreview = URL.createObjectURL(file);
+    }
+  }
+
+  async onDesignationImageSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 5242880) { // 5MB
+        this.error = 'Designation image size must be less than 5MB';
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        this.error = 'Only image files are allowed for designation';
+        return;
+      }
+      this.selectedDesignationImage = file;
+      this.designationImagePreview = URL.createObjectURL(file);
+    }
+  }
+
+  async onRiskImageSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 5242880) { // 5MB
+        this.error = 'Risk image size must be less than 5MB';
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        this.error = 'Only image files are allowed for risk document';
+        return;
+      }
+      this.selectedRiskImage = file;
+      this.riskImagePreview = URL.createObjectURL(file);
+    }
+  }
+
+  removeProfileImage() {
+    this.selectedProfileImage = null;
+    this.profileImagePreview = null;
+  }
+
+  removeDesignationImage() {
+    this.selectedDesignationImage = null;
+    this.designationImagePreview = null;
+  }
+
+  removeRiskImage() {
+    this.selectedRiskImage = null;
+    this.riskImagePreview = null;
+  }
+
+  private async uploadImage(file: File, bucket: string): Promise<string> {
+    return this.storageService.uploadFile(file, bucket);
+  }
+
+  private async createBond() {
+    const bondData = { ...this.newBond };
+    const { data, error } = await this.supabase.getClient()
+      .from('fbus_list')
+      .insert([bondData])
+      .select();
+
+    if (error) throw error;
+
+    if (data) {
+      // Log the activity
+      const { error: activityError } = await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert([{
+          action: `Added new bond for ${bondData.first_name} ${bondData.last_name}`,
+          user_name: await this.getCurrentUserName(),
+          created_at: new Date().toISOString()
+        }]);
+
+      if (activityError) throw activityError;
+
+      this.activeBonds = [data[0], ...this.activeBonds];
+      this.resetForm();
+    }
+  }
+
+  private async updateBond() {
+    const bondData = { ...this.newBond };
+    const { data, error } = await this.supabase.getClient()
+      .from('fbus_list')
+      .update(bondData)
+      .eq('id', this.newBond.id)
+      .select();
+
+    if (error) throw error;
+
+    if (data) {
+      // Log the activity
+      const { error: activityError } = await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert([{
+          action: `Updated bond for ${bondData.first_name} ${bondData.last_name}`,
+          user_name: await this.getCurrentUserName(),
+          created_at: new Date().toISOString()
+        }]);
+
+      if (activityError) throw activityError;
+
+      const index = this.activeBonds.findIndex(b => b.id === this.newBond.id);
+      if (index !== -1) {
+        this.activeBonds[index] = data[0];
+      }
+      this.resetForm();
+    }
+  }
+
+  private resetForm() {
+    this.isEditMode = false;
+    this.newBond = this.getEmptyBond();
+    this.removeProfileImage();
+    this.removeDesignationImage();
+    this.removeRiskImage();
+  }
+
+  private async cleanupImageUrls(bond: FbusBond) {
+    try {
+      if (bond.profile_image_url) {
+        await this.storageService.deleteFile(bond.profile_image_url);
+      }
+
+      if (bond.designation_image_url) {
+        await this.storageService.deleteFile(bond.designation_image_url);
+      }
+
+      if (bond.risk_image_url) {
+        await this.storageService.deleteFile(bond.risk_image_url);
+      }
+    } catch (error) {
+      console.error('Error cleaning up image files:', error);
     }
   }
 }

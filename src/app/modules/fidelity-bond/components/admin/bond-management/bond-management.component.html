@@ -744,6 +744,99 @@
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
               </div>
 
+              <!-- Profile Image Upload -->
+              <div class="sm:col-span-2">
+                <label for="profile_image" class="block text-sm font-medium text-gray-700">Profile Image (Optional)</label>
+                <div class="mt-1 flex items-center space-x-4">
+                  <div class="h-24 w-24 overflow-hidden rounded-lg bg-gray-100">
+                    <img *ngIf="profileImagePreview" [src]="profileImagePreview" class="h-full w-full object-cover">
+                    <div *ngIf="!profileImagePreview" class="flex h-full items-center justify-center">
+                      <svg class="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="flex flex-col space-y-2">
+                    <label class="inline-flex cursor-pointer items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                      <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                      </svg>
+                      Upload Profile
+                      <input type="file" (change)="onProfileImageSelected($event)" accept="image/*" class="hidden">
+                    </label>
+                    <button *ngIf="profileImagePreview" type="button" (click)="removeProfileImage()"
+                      class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700">
+                      <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Designation Image Upload -->
+              <div class="sm:col-span-2">
+                <label for="designation_image" class="block text-sm font-medium text-gray-700">Designation Image (Optional)</label>
+                <div class="mt-1 flex items-center space-x-4">
+                  <div class="h-24 w-24 overflow-hidden rounded-lg bg-gray-100">
+                    <img *ngIf="designationImagePreview" [src]="designationImagePreview" class="h-full w-full object-cover">
+                    <div *ngIf="!designationImagePreview" class="flex h-full items-center justify-center">
+                      <svg class="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="flex flex-col space-y-2">
+                    <label class="inline-flex cursor-pointer items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                      <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                      </svg>
+                      Upload Designation
+                      <input type="file" (change)="onDesignationImageSelected($event)" accept="image/*" class="hidden">
+                    </label>
+                    <button *ngIf="designationImagePreview" type="button" (click)="removeDesignationImage()"
+                      class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700">
+                      <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Risk Image Upload -->
+              <div class="sm:col-span-2">
+                <label for="risk_image" class="block text-sm font-medium text-gray-700">Risk Image (Optional)</label>
+                <div class="mt-1 flex items-center space-x-4">
+                  <div class="h-24 w-24 overflow-hidden rounded-lg bg-gray-100">
+                    <img *ngIf="riskImagePreview" [src]="riskImagePreview" class="h-full w-full object-cover">
+                    <div *ngIf="!riskImagePreview" class="flex h-full items-center justify-center">
+                      <svg class="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="flex flex-col space-y-2">
+                    <label class="inline-flex cursor-pointer items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                      <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                      </svg>
+                      Upload Risk
+                      <input type="file" (change)="onRiskImageSelected($event)" accept="image/*" class="hidden">
+                    </label>
+                    <button *ngIf="riskImagePreview" type="button" (click)="removeRiskImage()"
+                      class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700">
+                      <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div class="sm:col-span-2">
                 <label for="remark" class="block text-sm font-medium text-gray-700">Remarks</label>
                 <textarea name="remark" id="remark" rows="3" [(ngModel)]="newBond.remark"
@@ -921,9 +1014,17 @@
 
           <!-- Content Sections -->
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <!-- Employee Information -->
+            <!-- Employee Information with Profile Image -->
             <div class="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Employee Information</h3>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Employee Information</h3>
+                <!-- Profile Image Preview -->
+                <div class="relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity duration-200" 
+                     *ngIf="selectedBond.profile_image_url" 
+                     (click)="showFullSizeImage = true; selectedImageUrl = selectedBond.profile_image_url">
+                  <img [src]="selectedBond.profile_image_url" class="h-full w-full object-cover" alt="Profile">
+                </div>
+              </div>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-500">Full Name</label>
@@ -948,9 +1049,17 @@
               </div>
             </div>
 
-            <!-- Bond Information -->
+            <!-- Bond Information with Risk Image -->
             <div class="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Bond Information</h3>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Bond Information</h3>
+                <!-- Risk Image Preview -->
+                <div class="relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity duration-200" 
+                     *ngIf="selectedBond.risk_image_url" 
+                     (click)="showFullSizeImage = true; selectedImageUrl = selectedBond.risk_image_url">
+                  <img [src]="selectedBond.risk_image_url" class="h-full w-full object-cover" alt="Risk">
+                </div>
+              </div>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-500">Risk Number</label>
@@ -978,9 +1087,17 @@
               </div>
             </div>
 
-            <!-- Dates and Additional Information -->
+            <!-- Dates and Additional Information with Designation Image -->
             <div class="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Dates & Additional Information</h3>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Dates & Additional Information</h3>
+                <!-- Designation Image Preview -->
+                <div class="relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity duration-200" 
+                     *ngIf="selectedBond.designation_image_url" 
+                     (click)="showFullSizeImage = true; selectedImageUrl = selectedBond.designation_image_url">
+                  <img [src]="selectedBond.designation_image_url" class="h-full w-full object-cover" alt="Designation">
+                </div>
+              </div>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-500">Effective Date</label>
@@ -1142,6 +1259,38 @@
             class="mt-3 inline-flex w-full justify-center items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:w-auto transition-all duration-200">
             Cancel
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Size Image Modal -->
+<div *ngIf="showFullSizeImage && selectedImageUrl" class="relative z-30" role="dialog" aria-modal="true">
+  <!-- Dark overlay with higher opacity for better contrast -->
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-90 transition-opacity"></div>
+
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <!-- Increased max-width and added padding -->
+      <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl mx-auto p-4">
+        <!-- Close Button - Repositioned and styled -->
+        <button type="button" (click)="showFullSizeImage = false; selectedImageUrl = null"
+          class="absolute -top-3 -right-3 rounded-full bg-white p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-10 shadow-lg hover:bg-gray-50 transition-all duration-200">
+          <span class="sr-only">Close</span>
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <!-- Image Container - Improved styling for better display -->
+        <div class="relative overflow-hidden rounded-lg">
+          <img [src]="selectedImageUrl" 
+               class="w-full h-full object-contain max-h-[80vh]" 
+               [style.max-width]="'100%'"
+               [style.width]="'auto'"
+               [style.height]="'auto'"
+               alt="Full size image" />
         </div>
       </div>
     </div>
