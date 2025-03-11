@@ -45,31 +45,72 @@
 
             <!-- Export Dropdown -->
             <div class="relative">
-              <button (click)="showExportMenu = !showExportMenu" type="button" 
-                class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-green-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              <button (click)="showExportMenu = !showExportMenu" 
+                      class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors duration-200">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 Export Report
-                <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
               </button>
-              <!-- Dropdown Menu -->
-              <div *ngIf="showExportMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
-                <div class="py-1">
-                  <button (click)="exportReport(); showExportMenu = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <svg class="w-4 h-4 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Export to Excel
-                  </button>
-                  <button (click)="exportToPDF(); showExportMenu = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <svg class="w-4 h-4 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                    </svg>
-                    Export to PDF
-                  </button>
+
+              <div *ngIf="showExportMenu" 
+                   class="absolute right-0 mt-3 w-96 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                <div class="divide-y divide-gray-100">
+                  <!-- Header Section -->
+                  <div class="p-4 bg-gray-50 rounded-t-xl">
+                    <div class="flex justify-between items-center">
+                      <h3 class="text-lg font-semibold text-gray-900">Show/Hide Columns</h3>
+                      <button type="button" 
+                              (click)="resetColumns()"
+                              class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 rounded-lg hover:bg-blue-50 transition-all duration-200">
+                        <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Reset Columns
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Column Selection Grid -->
+                  <div class="p-4">
+                    <div class="grid grid-cols-2 gap-3">
+                      <div *ngFor="let col of getVisibleColumns()" 
+                           class="relative flex items-center space-x-3 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm hover:border-gray-300 transition-colors duration-200">
+                        <div class="flex-shrink-0">
+                          <input type="checkbox"
+                                 [id]="col"
+                                 [checked]="selectedColumns[col]"
+                                 (change)="toggleColumn(col)"
+                                 class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 transition-colors duration-200">
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <label [for]="col" class="block text-sm font-medium text-gray-900 cursor-pointer">
+                            {{ columnLabels[col] }}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="px-4 py-3 bg-gray-50 rounded-b-xl">
+                    <div class="flex justify-end space-x-3">
+                      <button (click)="exportToPDF()"
+                              class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 transition-colors duration-200">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Export to PDF
+                      </button>
+                      <button (click)="exportReport()"
+                              class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 transition-colors duration-200">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Export to Excel
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
