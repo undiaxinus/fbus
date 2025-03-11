@@ -887,8 +887,8 @@ export class BondManagementComponent implements OnInit {
         });
       });
 
-      // Add data rows
-      const data = this.activeBonds.map((bond, index) => ([
+      // Add data rows - Use filteredBonds instead of activeBonds
+      const data = this.filteredBonds.map((bond, index) => ([
         index + 1,
         bond.rank,
         `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
@@ -931,31 +931,31 @@ export class BondManagementComponent implements OnInit {
 
       // Add signature section
       const signatureSection = [
-        ['Prepared By:', '', 'Certified Correct:', '', 'Noted by:', ''],
-        ['', '', '', '', '', ''],
+        ['Prepared By:', '', '', '', 'Certified Correct:', '', '', '', 'Noted by:', '', ''],
+        ['', '', '', '', '', '', '', '', '', '', ''],
         [
           this.signatories.preparedBy?.name || 'MAY LANNIE B ESPIRITU',
-          '',
+          '', '', '',
           this.signatories.certifiedBy?.name || 'BRYAN JOHN D BACCAY',
-          '',
+          '', '', '',
           this.signatories.notedBy?.name || 'JENNIFER N BELMONTE',
-          ''
+          '', '', ''
         ],
         [
           this.signatories.preparedBy?.rank || 'Non-Uniformed Personnel',
-          '',
+          '', '', '',
           this.signatories.certifiedBy?.rank || 'Police Major',
-          '',
+          '', '', '',
           this.signatories.notedBy?.rank || 'Police Colonel',
-          ''
+          '', '', ''
         ],
         [
           this.signatories.preparedBy?.designation || 'MODE Examiner, RFU-5',
-          '',
+          '', '', '',
           this.signatories.certifiedBy?.designation || 'Chief Disbursement Section, RFU-5',
-          '',
+          '', '', '',
           this.signatories.notedBy?.designation || 'Chief, RFU-5',
-          ''
+          '', '', ''
         ]
       ];
 
@@ -968,8 +968,8 @@ export class BondManagementComponent implements OnInit {
       const lastRowNum = worksheet.rowCount;
       const signatureStartRow = lastRowNum - 4;
       
-      // Merge cells for each section (2 columns each)
-      ['A:B', 'E:F', 'I:J'].forEach((cols, index) => {
+      // Merge cells for each section (3 columns each)
+      ['A:D', 'E:H', 'I:K'].forEach((cols, index) => {
         for (let i = 0; i < 5; i++) {
           worksheet.mergeCells(`${cols.split(':')[0]}${signatureStartRow + i}:${cols.split(':')[1]}${signatureStartRow + i}`);
         }
@@ -982,8 +982,8 @@ export class BondManagementComponent implements OnInit {
 
       await this.logExportActivity('Excel');
     } catch (error) {
-      console.error('Error exporting report:', error);
-      this.error = 'Failed to export report. Please try again.';
+      console.error('Error exporting Excel:', error);
+      this.error = 'Failed to export Excel. Please try again.';
     }
   }
 
@@ -1112,7 +1112,8 @@ export class BondManagementComponent implements OnInit {
             'DATE OF\nCANCELLATION'
           ]
         ],
-        body: this.activeBonds.map((bond, index) => [
+        // Use filteredBonds instead of activeBonds
+        body: this.filteredBonds.map((bond, index) => [
           (index + 1).toString(),
           bond.rank,
           `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
@@ -1155,18 +1156,22 @@ export class BondManagementComponent implements OnInit {
           8: { cellWidth: 25 },  // RISK NO
           9: { cellWidth: 25 },  // EFFECTIVITY DATE
           10: { cellWidth: 25 }  // DATE OF CANCELLATION
-        }
+        },
+        margin: { bottom: 50 } // Add bottom margin to the table
       };
 
-      // Add table to PDF
-      autoTable(pdf, tableConfig);
+      // Add table to PDF and get the final Y position
+      let finalY = pdfCurrentY;
+      await autoTable(pdf, tableConfig);
+      // @ts-ignore jspdf-autotable types are incomplete
+      finalY = (pdf as any).lastAutoTable.finalY || pdfCurrentY;
 
-      // Add signature section
-      const pdfSignatureY = pdf.internal.pageSize.height - 40;
+      // Add signature section starting from the table's end position plus some spacing
+      const pdfSignatureY = finalY + 20; // Start signatures 20mm after table ends
       const pdfSignatureLeftX = 30;
       const pdfSignatureCenterX = pdf.internal.pageSize.width / 2;
       const pdfSignatureRightX = pdf.internal.pageSize.width - 60;
-      const pdfSignatureSpacing = 7;
+      const pdfSignatureSpacing = 8;
 
       // Function to add signature block
       const addSignatureBlock = (x: number, title: string, signatory: FbusSignatory | undefined, defaultName: string, defaultRank: string, defaultDesignation: string) => {
