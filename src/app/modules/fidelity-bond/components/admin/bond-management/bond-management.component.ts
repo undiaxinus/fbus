@@ -894,9 +894,9 @@ export class BondManagementComponent implements OnInit {
         `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
         bond.designation,
         bond.unit_office,
-        parseFloat(bond.mca || '0').toFixed(2),
-        parseFloat(bond.amount_of_bond || '0').toFixed(2),
-        parseFloat(bond.bond_premium || '0').toFixed(2),
+        this.formatNumberWithCommas(bond.mca || '0'),
+        this.formatNumberWithCommas(bond.amount_of_bond || '0'),
+        this.formatNumberWithCommas(bond.bond_premium || '0'),
         bond.risk_no,
         bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
         bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
@@ -906,7 +906,7 @@ export class BondManagementComponent implements OnInit {
         const row = worksheet.addRow(rowData);
         row.alignment = { horizontal: 'center', vertical: 'middle' };
         
-        // Format number columns
+        // Format number columns with comma separators
         row.getCell(6).numFmt = '#,##0.00'; // MCA
         row.getCell(7).numFmt = '#,##0.00'; // AMOUNT OF BOND
         row.getCell(8).numFmt = '#,##0.00'; // BOND PREMIUM
@@ -1044,6 +1044,12 @@ export class BondManagementComponent implements OnInit {
     this.currentPage = 1;
   }
 
+  formatNumberWithCommas(value: string | number): string {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   async exportToPDF() {
     try {
       const currentDate = new Date();
@@ -1119,9 +1125,9 @@ export class BondManagementComponent implements OnInit {
           `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
           bond.designation,
           bond.unit_office,
-          this.formatCurrency(bond.mca),
-          this.formatCurrency(bond.amount_of_bond),
-          this.formatCurrency(bond.bond_premium),
+          this.formatNumberWithCommas(bond.mca || '0'),
+          this.formatNumberWithCommas(bond.amount_of_bond || '0'),
+          this.formatNumberWithCommas(bond.bond_premium || '0'),
           bond.risk_no,
           bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
           bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
