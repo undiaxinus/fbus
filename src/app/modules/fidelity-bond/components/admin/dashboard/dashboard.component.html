@@ -19,34 +19,40 @@
     </div>
   </div>
 
-  <!-- Quick Actions -->
-  <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <button class="flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        Create New Bond
-      </button>
-      <button class="flex items-center justify-center px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-        </svg>
-        Export Report
-      </button>
-      <button class="flex items-center justify-center px-4 py-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-        Settings
-      </button>
-    </div>
-  </div>
-
   <!-- Stats Overview -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- Department Stats -->
+    <div class="col-span-full bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between mb-4 cursor-pointer" (click)="isDepartmentStatsVisible = !isDepartmentStatsVisible">
+        <h2 class="text-lg font-semibold text-gray-900">Department Bond Statistics</h2>
+        <svg class="w-5 h-5 text-gray-500 transition-transform duration-300" [class.rotate-180]="isDepartmentStatsVisible" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300 overflow-hidden" [class.h-0]="!isDepartmentStatsVisible" [class.opacity-0]="!isDepartmentStatsVisible" [class.h-auto]="isDepartmentStatsVisible" [class.opacity-100]="isDepartmentStatsVisible">
+        <div *ngFor="let dept of departmentStats" class="bg-gray-50 rounded-lg p-4">
+          <h3 class="text-gray-700 font-medium mb-2">{{dept.name}}</h3>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">Total Bonds:</span>
+              <span class="font-semibold text-gray-900">{{dept.totalBonds}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">Active:</span>
+              <span class="font-semibold text-green-600">{{dept.activeBonds}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">Expiring Soon:</span>
+              <span class="font-semibold text-yellow-600">{{dept.expiringBonds}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-500">Expired:</span>
+              <span class="font-semibold text-red-600">{{dept.expiredBonds}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Total Bonds -->
     <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
       <div class="flex items-center justify-between mb-4">

@@ -26,6 +26,14 @@ interface DashboardStats {
   expiredBonds: number;
 }
 
+interface DepartmentStats {
+  name: string;
+  totalBonds: number;
+  activeBonds: number;
+  expiringBonds: number;
+  expiredBonds: number;
+}
+
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './dashboard.component.html',
@@ -41,6 +49,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   private distributionChart?: Chart;
   private trendChart?: Chart;
   today: Date = new Date();
+  isDepartmentStatsVisible: boolean = false;
 
   stats: DashboardStats = {
     totalBonds: 0,
@@ -48,6 +57,8 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     expiringBonds: 0,
     expiredBonds: 0
   };
+
+  departmentStats: DepartmentStats[] = [];
 
   activeRate: string = '0.0%';
   recentActivities: any[] = [];
@@ -168,6 +179,19 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
         // Calculate active rate percentage
         const activeRate = (this.stats.activeBonds / this.stats.totalBonds * 100).toFixed(1);
         this.activeRate = `${activeRate}%`;
+
+        // Calculate department-wise statistics
+        const departments = new Set(activeBonds.map(bond => bond.unit_office || 'Unassigned'));
+        this.departmentStats = Array.from(departments).map(department => {
+          const departmentBonds = activeBonds.filter(bond => (bond.unit_office || 'Unassigned') === department);
+          return {
+            name: department,
+            totalBonds: departmentBonds.length,
+            activeBonds: departmentBonds.filter(bond => this.calculateBondStatus(bond) === 'VALID').length,
+            expiringBonds: departmentBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRE SOON').length,
+            expiredBonds: departmentBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRED').length
+          };
+        });
 
         // Update the charts with new data
         this.updateCharts();
