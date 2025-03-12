@@ -148,6 +148,47 @@ export class BondManagementComponent implements OnInit {
   itemsPerPage = 10;
 
   showExportMenu = false;
+  selectedColumns: { [key: string]: boolean } = {
+    nr: true,
+    rank: true,
+    name: true,
+    designation: true,
+    unit: true,
+    mca: true,
+    amount_of_bond: true,
+    bond_premium: true,
+    risk_no: true,
+    effective_date: true,
+    date_of_cancellation: true
+  };
+
+  columnLabels: { [key: string]: string } = {
+    nr: 'NR',
+    rank: 'RANK',
+    name: 'NAME',
+    designation: 'DESIGNATION',
+    unit: 'UNIT',
+    mca: 'MCA',
+    amount_of_bond: 'AMOUNT OF BOND',
+    bond_premium: 'BOND PREMIUM',
+    risk_no: 'RISK NO.',
+    effective_date: 'EFFECTIVITY DATE',
+    date_of_cancellation: 'DATE OF CANCELLATION'
+  };
+
+  columnWidths: { [key: string]: number } = {
+    nr: 4,
+    rank: 8,
+    name: 30,
+    designation: 20,
+    unit: 20,
+    mca: 20,
+    amount_of_bond: 20,
+    bond_premium: 20,
+    risk_no: 20,
+    effective_date: 20,
+    date_of_cancellation: 25
+  };
 
   signatories: {
     preparedBy?: FbusSignatory;
@@ -769,6 +810,16 @@ export class BondManagementComponent implements OnInit {
     this.newBond = this.getEmptyBond();
   }
 
+  toggleColumn(column: string) {
+    this.selectedColumns[column] = !this.selectedColumns[column];
+  }
+
+  getVisibleColumns(): string[] {
+    return Object.entries(this.selectedColumns)
+      .filter(([_, isVisible]) => isVisible)
+      .map(([column]) => column);
+  }
+
   async exportReport() {
     try {
       const currentDate = new Date();
@@ -819,97 +870,74 @@ export class BondManagementComponent implements OnInit {
 
       // Add images overlapping with first few rows
       worksheet.addImage(logoId1, {
-        tl: { col: 2, row: 3 },  // Start from top
+        tl: { col: 2, row: 3 },
         ext: { width: 80, height: 80 }
       });
 
       worksheet.addImage(logoId2, {
-        tl: { col: 9, row: 3 },  // Start from top
+        tl: { col: 9, row: 3 },
         ext: { width: 80, height: 80 }
       });
 
-      // Add table headers immediately after
-      const mainHeaders = [
-        'NR', 'RANK', 'NAME', 'DESIGNATION', 'UNIT', 'MCA',
-        'FIDELITY BOND'
-      ];
+      // Get visible columns
+      const visibleColumns = this.getVisibleColumns();
 
+      // Create headers based on visible columns
+      const mainHeaders = visibleColumns.map(col => this.columnLabels[col]);
       const mainHeaderRow = worksheet.addRow(mainHeaders);
       mainHeaderRow.font = { bold: true };
       mainHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
-      worksheet.mergeCells(`G${mainHeaderRow.number}:K${mainHeaderRow.number}`);
 
-      // Add sub-headers
-      const subHeaders = [
-        '',             // NR
-        '',             // RANK
-        '',             // NAME
-        '',             // DESIGNATION
-        '',             // UNIT
-        '',             // MCA
-        'AMOUNT\nOF BOND',
-        'BOND\nPREMIUM',
-        'RISK NO.',
-        'EFFECTIVITY\nDATE',
-        'DATE OF\nCANCELLATION'
-      ];
-
-      // Add sub-header row
-      const subHeaderRow = worksheet.addRow(subHeaders);
-      subHeaderRow.font = { bold: true };
-      subHeaderRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      subHeaderRow.height = 30; // Adjust height for wrapped text
-
-      // Set column widths
-      worksheet.columns = [
-        { width: 4 },  // NR
-        { width: 8 },  // RANK
-        { width: 30 }, // NAME
-        { width: 20 }, // DESIGNATION
-        { width: 20 }, // UNIT
-        { width: 20 }, // MCA
-        { width: 20 }, // AMOUNT OF BOND
-        { width: 20 }, // BOND PREMIUM
-        { width: 20 }, // RISK NO
-        { width: 20 }, // EFFECTIVITY DATE
-        { width: 25 }  // DATE OF CANCELLATION
-      ];
-
-      // Add borders to all header cells
-      [mainHeaderRow, subHeaderRow].forEach(row => {
-        row.eachCell((cell: Cell, colNumber: number) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-          };
+      // Add data rows with only visible columns
+      const data = this.filteredBonds.map((bond, index) => {
+        return visibleColumns.map(col => {
+          switch(col) {
+            case 'nr':
+              return index + 1;
+            case 'rank':
+              return bond.rank;
+            case 'name':
+              return `${bond.first_name} ${bond.middle_name} ${bond.last_name}`;
+            case 'designation':
+              return bond.designation;
+            case 'unit':
+              return bond.unit_office;
+            case 'mca':
+              return this.formatNumberWithCommas(bond.mca || '0');
+            case 'amount_of_bond':
+              return this.formatNumberWithCommas(bond.amount_of_bond || '0');
+            case 'bond_premium':
+              return this.formatNumberWithCommas(bond.bond_premium || '0');
+            case 'risk_no':
+              return bond.risk_no;
+            case 'effective_date':
+              return bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '';
+            case 'date_of_cancellation':
+              return bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : '';
+            default:
+              return '';
+          }
         });
       });
 
       // Add data rows
-      const data = this.activeBonds.map((bond, index) => ([
-        index + 1,
-        bond.rank,
-        `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
-        bond.designation,
-        bond.unit_office,
-        parseFloat(bond.mca || '0').toFixed(2),
-        parseFloat(bond.amount_of_bond || '0').toFixed(2),
-        parseFloat(bond.bond_premium || '0').toFixed(2),
-        bond.risk_no,
-        bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
-        bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
-      ]));
-
       data.forEach(rowData => {
         const row = worksheet.addRow(rowData);
         row.alignment = { horizontal: 'center', vertical: 'middle' };
         
-        // Format number columns
-        row.getCell(6).numFmt = '#,##0.00'; // MCA
-        row.getCell(7).numFmt = '#,##0.00'; // AMOUNT OF BOND
-        row.getCell(8).numFmt = '#,##0.00'; // BOND PREMIUM
+        // Format number columns if they are visible
+        if (visibleColumns.includes('mca')) {
+          const mcaIndex = visibleColumns.indexOf('mca') + 1;
+          row.getCell(mcaIndex).numFmt = '#,##0.00';
+        }
+        if (visibleColumns.includes('amount_of_bond')) {
+          const amountIndex = visibleColumns.indexOf('amount_of_bond') + 1;
+          row.getCell(amountIndex).numFmt = '#,##0.00';
+        }
+        if (visibleColumns.includes('bond_premium')) {
+          const premiumIndex = visibleColumns.indexOf('bond_premium') + 1;
+          row.getCell(premiumIndex).numFmt = '#,##0.00';
+        }
       });
 
       // Add borders to all cells
@@ -924,6 +952,11 @@ export class BondManagementComponent implements OnInit {
         });
       });
 
+      // Set column widths based on visible columns
+      worksheet.columns = visibleColumns.map(col => ({
+        width: this.columnWidths[col]
+      }));
+
       // Add empty rows for spacing
       worksheet.addRow([]);
       worksheet.addRow([]);
@@ -931,31 +964,31 @@ export class BondManagementComponent implements OnInit {
 
       // Add signature section
       const signatureSection = [
-        ['Prepared By:', '', 'Certified Correct:', '', 'Noted by:', ''],
-        ['', '', '', '', '', ''],
+        ['Prepared By:', '', '', '', 'Certified Correct:', '', '', '', 'Noted by:', '', ''],
+        ['', '', '', '', '', '', '', '', '', '', ''],
         [
           this.signatories.preparedBy?.name || 'MAY LANNIE B ESPIRITU',
-          '',
+          '', '', '',
           this.signatories.certifiedBy?.name || 'BRYAN JOHN D BACCAY',
-          '',
+          '', '', '',
           this.signatories.notedBy?.name || 'JENNIFER N BELMONTE',
-          ''
+          '', '', ''
         ],
         [
           this.signatories.preparedBy?.rank || 'Non-Uniformed Personnel',
-          '',
+          '', '', '',
           this.signatories.certifiedBy?.rank || 'Police Major',
-          '',
+          '', '', '',
           this.signatories.notedBy?.rank || 'Police Colonel',
-          ''
+          '', '', ''
         ],
         [
           this.signatories.preparedBy?.designation || 'MODE Examiner, RFU-5',
-          '',
+          '', '', '',
           this.signatories.certifiedBy?.designation || 'Chief Disbursement Section, RFU-5',
-          '',
+          '', '', '',
           this.signatories.notedBy?.designation || 'Chief, RFU-5',
-          ''
+          '', '', ''
         ]
       ];
 
@@ -968,8 +1001,8 @@ export class BondManagementComponent implements OnInit {
       const lastRowNum = worksheet.rowCount;
       const signatureStartRow = lastRowNum - 4;
       
-      // Merge cells for each section (2 columns each)
-      ['A:B', 'E:F', 'I:J'].forEach((cols, index) => {
+      // Merge cells for each section (3 columns each)
+      ['A:D', 'E:H', 'I:K'].forEach((cols, index) => {
         for (let i = 0; i < 5; i++) {
           worksheet.mergeCells(`${cols.split(':')[0]}${signatureStartRow + i}:${cols.split(':')[1]}${signatureStartRow + i}`);
         }
@@ -982,8 +1015,8 @@ export class BondManagementComponent implements OnInit {
 
       await this.logExportActivity('Excel');
     } catch (error) {
-      console.error('Error exporting report:', error);
-      this.error = 'Failed to export report. Please try again.';
+      console.error('Error exporting Excel:', error);
+      this.error = 'Failed to export Excel. Please try again.';
     }
   }
 
@@ -1044,6 +1077,12 @@ export class BondManagementComponent implements OnInit {
     this.currentPage = 1;
   }
 
+  formatNumberWithCommas(value: string | number): string {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   async exportToPDF() {
     try {
       const currentDate = new Date();
@@ -1092,39 +1131,48 @@ export class BondManagementComponent implements OnInit {
         pdfCurrentY += pdfLineSpacing;
       });
 
+      // Get visible columns
+      const visibleColumns = this.getVisibleColumns();
+
+      // Configure table headers based on visible columns
+      const tableHeaders = visibleColumns.map(col => ({
+        content: this.columnLabels[col],
+        styles: { halign: 'center' as const }
+      }));
+
       // Configure table
       const tableConfig: UserOptions = {
-        head: [
-          [
-            { content: 'NR', rowSpan: 2 },
-            { content: 'RANK', rowSpan: 2 },
-            { content: 'NAME', rowSpan: 2 },
-            { content: 'DESIGNATION', rowSpan: 2 },
-            { content: 'UNIT', rowSpan: 2 },
-            { content: 'MCA', rowSpan: 2 },
-            { content: 'FIDELITY BOND', colSpan: 5 }
-          ],
-          [
-            'AMOUNT\nOF BOND',
-            'BOND\nPREMIUM',
-            'RISK NO.',
-            'EFFECTIVITY\nDATE',
-            'DATE OF\nCANCELLATION'
-          ]
-        ],
-        body: this.activeBonds.map((bond, index) => [
-          (index + 1).toString(),
-          bond.rank,
-          `${bond.first_name} ${bond.middle_name} ${bond.last_name}`,
-          bond.designation,
-          bond.unit_office,
-          this.formatCurrency(bond.mca),
-          this.formatCurrency(bond.amount_of_bond),
-          this.formatCurrency(bond.bond_premium),
-          bond.risk_no,
-          bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '',
-          bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : ''
-        ]),
+        head: [tableHeaders],
+        body: this.filteredBonds.map((bond, index) => {
+          return visibleColumns.map(col => {
+            switch(col) {
+              case 'nr':
+                return index + 1;
+              case 'rank':
+                return bond.rank;
+              case 'name':
+                return `${bond.first_name} ${bond.middle_name} ${bond.last_name}`;
+              case 'designation':
+                return bond.designation;
+              case 'unit':
+                return bond.unit_office;
+              case 'mca':
+                return this.formatNumberWithCommas(bond.mca || '0');
+              case 'amount_of_bond':
+                return this.formatNumberWithCommas(bond.amount_of_bond || '0');
+              case 'bond_premium':
+                return this.formatNumberWithCommas(bond.bond_premium || '0');
+              case 'risk_no':
+                return bond.risk_no;
+              case 'effective_date':
+                return bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '';
+              case 'date_of_cancellation':
+                return bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : '';
+              default:
+                return '';
+            }
+          });
+        }),
         startY: pdfCurrentY + 5,
         styles: {
           fontSize: 8,
@@ -1143,30 +1191,21 @@ export class BondManagementComponent implements OnInit {
         bodyStyles: {
           halign: 'center'
         } as const,
-        columnStyles: {
-          0: { cellWidth: 10 },  // NR
-          1: { cellWidth: 15 },  // RANK
-          2: { cellWidth: 40 },  // NAME
-          3: { cellWidth: 30 },  // DESIGNATION
-          4: { cellWidth: 30 },  // UNIT
-          5: { cellWidth: 25 },  // MCA
-          6: { cellWidth: 25 },  // AMOUNT OF BOND
-          7: { cellWidth: 25 },  // BOND PREMIUM
-          8: { cellWidth: 25 },  // RISK NO
-          9: { cellWidth: 25 },  // EFFECTIVITY DATE
-          10: { cellWidth: 25 }  // DATE OF CANCELLATION
-        }
+        margin: { bottom: 50 }
       };
 
-      // Add table to PDF
-      autoTable(pdf, tableConfig);
+      // Add table to PDF and get the final Y position
+      let finalY = pdfCurrentY;
+      await autoTable(pdf, tableConfig);
+      // @ts-ignore jspdf-autotable types are incomplete
+      finalY = (pdf as any).lastAutoTable.finalY || pdfCurrentY;
 
-      // Add signature section
-      const pdfSignatureY = pdf.internal.pageSize.height - 40;
+      // Add signature section starting from the table's end position plus some spacing
+      const pdfSignatureY = finalY + 20;
       const pdfSignatureLeftX = 30;
       const pdfSignatureCenterX = pdf.internal.pageSize.width / 2;
       const pdfSignatureRightX = pdf.internal.pageSize.width - 60;
-      const pdfSignatureSpacing = 7;
+      const pdfSignatureSpacing = 8;
 
       // Function to add signature block
       const addSignatureBlock = (x: number, title: string, signatory: FbusSignatory | undefined, defaultName: string, defaultRank: string, defaultDesignation: string) => {
@@ -1418,5 +1457,12 @@ export class BondManagementComponent implements OnInit {
     } catch (error) {
       console.error('Error cleaning up image files:', error);
     }
+  }
+
+  resetColumns() {
+    // Set all columns to visible
+    Object.keys(this.selectedColumns).forEach(key => {
+      this.selectedColumns[key] = true;
+    });
   }
 }
