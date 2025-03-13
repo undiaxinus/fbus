@@ -597,6 +597,18 @@ export class BondManagementComponent implements OnInit {
     try {
       this.isEditMode = true;
       this.newBond = { ...bond };
+      
+      // Set up image previews if URLs exist
+      if (bond.profile_image_url) {
+        this.profileImagePreview = bond.profile_image_url;
+      }
+      if (bond.designation_image_url) {
+        this.designationImagePreview = bond.designation_image_url;
+      }
+      if (bond.risk_image_url) {
+        this.riskImagePreview = bond.risk_image_url;
+      }
+      
       this.showAddBondModal = true;
       this.showViewBondModal = false;
     } catch (error) {
@@ -1405,6 +1417,18 @@ export class BondManagementComponent implements OnInit {
 
   private async updateBond() {
     const bondData = { ...this.newBond };
+    
+    // Only update image URLs if new images were selected
+    if (!this.selectedProfileImage) {
+      delete bondData.profile_image_url;
+    }
+    if (!this.selectedDesignationImage) {
+      delete bondData.designation_image_url;
+    }
+    if (!this.selectedRiskImage) {
+      delete bondData.risk_image_url;
+    }
+
     const { data, error } = await this.supabase.getClient()
       .from('fbus_list')
       .update(bondData)
