@@ -1373,16 +1373,25 @@ export class BondManagementComponent implements OnInit {
   removeProfileImage() {
     this.selectedProfileImage = null;
     this.profileImagePreview = null;
+    if (this.newBond) {
+      this.newBond.profile_image_url = undefined;
+    }
   }
 
   removeDesignationImage() {
     this.selectedDesignationImage = null;
     this.designationImagePreview = null;
+    if (this.newBond) {
+      this.newBond.designation_image_url = undefined;
+    }
   }
 
   removeRiskImage() {
     this.selectedRiskImage = null;
     this.riskImagePreview = null;
+    if (this.newBond) {
+      this.newBond.risk_image_url = undefined;
+    }
   }
 
   private async uploadImage(file: File, bucket: string): Promise<string> {
@@ -1457,12 +1466,18 @@ export class BondManagementComponent implements OnInit {
     }
   }
 
-  private resetForm() {
+  resetForm() {
     this.isEditMode = false;
     this.newBond = this.getEmptyBond();
     this.removeProfileImage();
     this.removeDesignationImage();
     this.removeRiskImage();
+    this.profileImagePreview = null;
+    this.designationImagePreview = null;
+    this.riskImagePreview = null;
+    this.selectedProfileImage = null;
+    this.selectedDesignationImage = null;
+    this.selectedRiskImage = null;
   }
 
   private async cleanupImageUrls(bond: FbusBond) {

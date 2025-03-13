@@ -35,12 +35,11 @@
             </button>
 
             <!-- Add New Bond Button -->
-            <button type="button" (click)="showAddBondModal = true"
-              class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
-              <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button (click)="resetForm(); showAddBondModal = true" class="btn-primary flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
               </svg>
-              Add New Bond
+              <span>Add New Bond</span>
             </button>
 
             <!-- Export Dropdown -->
