@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { SupabaseService } from '../../../../../services/supabase.service';
@@ -15,6 +15,7 @@ import html2canvas from 'html2canvas';
 import { UserOptions } from 'jspdf-autotable';
 import { DomSanitizer } from '@angular/platform-browser';
 import { SafePipe } from '../../../../../shared/pipes/safe.pipe';
+import { ClickOutsideDirective } from '../../../../../shared/directives/click-outside.directive';
 
 interface FbusBond {
   id?: string;
@@ -225,6 +226,10 @@ export class BondManagementComponent implements OnInit {
   showDocumentListModal = false;
   selectedDocumentType: 'designation' | 'risk' | null = null;
   documentsList: FbusDocument[] = [];
+
+  showAddBondDropdown: boolean = false;
+
+  isImporting: boolean = false;
 
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
@@ -1505,26 +1510,28 @@ export class BondManagementComponent implements OnInit {
     return '.' + filename.split('.').pop();
   }
 
-  private async createBond() {
+  private async createBond(bond?: FbusBond) {
     try {
       // First create the bond record
-      const { data: bond, error } = await this.supabase.getClient()
-      .from('fbus_list')
+      const { data: bondData, error } = await this.supabase.getClient()
+        .from('fbus_list')
         .insert([{
-          ...this.newBond,
+          ...(bond || this.newBond),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
         .select()
         .single();
 
-    if (error) throw error;
-      if (!bond || !bond.id) throw new Error('Failed to create bond record');
+      if (error) throw error;
+      if (!bondData || !bondData.id) throw new Error('Failed to create bond record');
 
-      // Then upload documents
-      await this.uploadImages(bond.id);
+      // Then upload documents - only if we're creating from the form
+      if (!bond) {
+        await this.uploadImages(bondData.id);
+      }
 
-      return bond;
+      return bondData;
     } catch (error) {
       console.error('Error creating bond:', error);
       throw error;
@@ -1536,7 +1543,7 @@ export class BondManagementComponent implements OnInit {
       if (!this.newBond.id) throw new Error('Bond ID is required for update');
 
       // First update the bond record
-      const { data: bond, error } = await this.supabase.getClient()
+      const { data: bondData, error } = await this.supabase.getClient()
       .from('fbus_list')
         .update({
           ...this.newBond,
@@ -1547,12 +1554,12 @@ export class BondManagementComponent implements OnInit {
         .single();
 
     if (error) throw error;
-      if (!bond || !bond.id) throw new Error('Failed to update bond record');
+      if (!bondData || !bondData.id) throw new Error('Failed to update bond record');
 
       // Then upload documents
-      await this.uploadImages(bond.id);
+      await this.uploadImages(bondData.id);
 
-      return bond;
+      return bondData;
     } catch (error) {
       console.error('Error updating bond:', error);
       throw error;
@@ -1711,5 +1718,231 @@ export class BondManagementComponent implements OnInit {
   isLatestDocument(document: FbusDocument): boolean {
     if (!this.documentsList.length) return false;
     return document.id === this.documentsList[0].id;
+  }
+
+  async importExcelBond() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx, .xls';
+
+    input.onchange = async (e: any) => {
+      try {
+        this.isImporting = true; // Start loading
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async (event: any) => {
+          try {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // Convert Excel data to JSON with raw values
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+              header: 1,
+              raw: true // Get raw values for better date handling
+            });
+            
+            // Find the starting row of actual data (skip headers)
+            let startRow = 0;
+            let headerRow = -1;
+            for (let i = 0; i < jsonData.length; i++) {
+              const currentRow: any = jsonData[i];
+              if (currentRow && Array.isArray(currentRow) && currentRow.length > 0) {
+                // Check for header row with RANK
+                if (currentRow.some(cell => typeof cell === 'string' && 
+                    cell.toUpperCase() === 'RANK')) {
+                  headerRow = i;
+                  startRow = i + 1;
+                  break;
+                }
+              }
+            }
+
+            let successCount = 0;
+            let errorCount = 0;
+            let totalRows = 0;
+
+            // Get column indices from header row
+            const headers = jsonData[headerRow] as string[];
+            const getColumnIndex = (headerName: string): number => {
+              return headers.findIndex((header: string) => 
+                header && header.toString().toUpperCase() === headerName.toUpperCase()
+              );
+            };
+
+            const unitIndex = getColumnIndex('UNIT');
+            const rankIndex = getColumnIndex('RANK');
+            const nameIndex = getColumnIndex('NAME');
+            const designationIndex = getColumnIndex('DESIGNATION');
+            const mcaIndex = getColumnIndex('MCA');
+            const amountIndex = getColumnIndex('AMOUNT OF BOND');
+            const premiumIndex = getColumnIndex('BOND PREMIUM');
+            const riskIndex = getColumnIndex('RISK NO.');
+            const effectiveIndex = getColumnIndex('EFFECTIVITY DATE');
+            const cancellationIndex = getColumnIndex('DATE OF CANCELLATION');
+
+            // Count total valid rows first
+            totalRows = jsonData.slice(startRow).filter(row => row && Array.isArray(row) && row[rankIndex]).length;
+
+            // Process each row and create bonds
+            for (let i = startRow; i < jsonData.length; i++) {
+              const currentRow: any = jsonData[i];
+              if (!currentRow || currentRow.length === 0 || !currentRow[rankIndex]) continue; // Skip empty rows
+
+              try {
+                // Clean up amount values - remove commas and currency symbols
+                const cleanAmount = (value: any) => {
+                  if (!value) return '0';
+                  const cleanedValue = value.toString().replace(/[^\d.]/g, '');
+                  return cleanedValue || '0';
+                };
+
+                // Get the unit value and ensure it's not undefined
+                const unitValue = currentRow[unitIndex]?.toString().trim() || '';
+
+                // Get and clean the MCA value
+                const mcaValue = cleanAmount(currentRow[mcaIndex]);
+                console.log('Raw MCA value:', currentRow[mcaIndex], 'Cleaned MCA value:', mcaValue);
+
+                // Split the full name into parts
+                const fullName = currentRow[nameIndex]?.toString().trim() || '';
+                const nameParts = fullName.split(' ').filter((part: string) => part.length > 0);
+                let firstName = '';
+                let middleName = '';
+                let lastName = '';
+
+                if (nameParts.length >= 2) {
+                  firstName = nameParts[0];
+                  lastName = nameParts[nameParts.length - 1];
+                  if (nameParts.length > 2) {
+                    middleName = nameParts.slice(1, -1).join(' ');
+                  }
+                } else {
+                  firstName = fullName; // If only one word, put it all in first name
+                }
+
+                // Create bond object with proper data handling
+                const newBondData: FbusBond = {
+                  rank: currentRow[rankIndex]?.toString().trim() || '',
+                  first_name: firstName,
+                  middle_name: middleName,
+                  last_name: lastName,
+                  designation: currentRow[designationIndex]?.toString().trim() || '',
+                  unit_office: unitValue,
+                  mca: mcaValue,
+                  amount_of_bond: cleanAmount(currentRow[amountIndex]),
+                  bond_premium: cleanAmount(currentRow[premiumIndex]),
+                  risk_no: currentRow[riskIndex]?.toString().trim() || '',
+                  effective_date: this.formatDateForSupabase(currentRow[effectiveIndex]),
+                  date_of_cancellation: this.formatDateForSupabase(currentRow[cancellationIndex]),
+                  status: 'VALID',
+                  days_remaning: '0',
+                  contact_no: '',
+                  units: unitValue, // Set units to the same value as unit_office
+                  profile: '',
+                  remark: '',
+                  is_archived: false,
+                  despic: '',
+                  riskpic: ''
+                };
+
+                // Log the data being processed
+                console.log('Processing row:', {
+                  rowNumber: i + 1,
+                  rawData: currentRow,
+                  formattedData: newBondData,
+                  progress: `${successCount + errorCount + 1}/${totalRows}`
+                });
+
+                await this.createBond(newBondData);
+                successCount++;
+                console.log('Successfully created bond:', newBondData);
+              } catch (error) {
+                errorCount++;
+                console.error('Error creating bond at row', i + 1, ':', error, 'Row data:', currentRow);
+              }
+            }
+
+            console.log(`Import completed. Success: ${successCount}, Errors: ${errorCount}, Total: ${totalRows}`);
+            alert(`Import completed!\nSuccessfully imported: ${successCount}\nErrors: ${errorCount}\nTotal rows: ${totalRows}`);
+            await this.loadBonds();
+            
+          } catch (error) {
+            console.error('Error processing Excel file:', error);
+            alert('Error processing Excel file. Please check the console for details.');
+          } finally {
+            this.isImporting = false; // End loading
+          }
+        };
+
+        reader.readAsArrayBuffer(file);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert('Error reading file. Please try again.');
+        this.isImporting = false; // End loading on error
+      }
+    };
+
+    input.click();
+  }
+
+  private formatDateForSupabase(dateValue: any): string {
+    try {
+      if (!dateValue) return '';
+
+      // If it's a risk number that contains dashes (like "23-24-00209N"), return as is
+      if (typeof dateValue === 'string' && dateValue.includes('-') && dateValue.length > 8) {
+        return dateValue;
+      }
+
+      // Handle string date in M/D/YYYY format
+      if (typeof dateValue === 'string') {
+        const cleanDate = dateValue.toString().trim();
+        const parts = cleanDate.split('/');
+        
+        if (parts.length === 3) {
+          let month = parseInt(parts[0], 10);
+          let day = parseInt(parts[1], 10);
+          let year = parseInt(parts[2], 10);
+          
+          // Validate date parts
+          if (!isNaN(month) && !isNaN(day) && !isNaN(year) &&
+              month >= 1 && month <= 12 &&
+              day >= 1 && day <= 31) {
+            
+            // Format as MM/DD/YY
+            const mm = String(month).padStart(2, '0');
+            const dd = String(day).padStart(2, '0');
+            const yy = year.toString().slice(-2);
+            return `${mm}/${dd}/${yy}`;
+          }
+        }
+      }
+
+      // Handle Excel date serial number
+      if (typeof dateValue === 'number') {
+        const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear().toString().slice(-2);
+        return `${month}/${day}/${year}`;
+      }
+
+      console.warn('Could not parse date value:', dateValue);
+      return '';
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Value:', dateValue);
+      return '';
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.add-bond-dropdown')) {
+      this.showAddBondDropdown = false;
+    }
   }
 }

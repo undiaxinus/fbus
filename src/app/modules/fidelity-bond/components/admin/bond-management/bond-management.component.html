@@ -34,13 +34,45 @@
               </span>
             </button>
 
-            <!-- Add New Bond Button -->
-            <button (click)="resetForm(); showAddBondModal = true" class="btn-primary flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-              </svg>
-              <span>Add New Bond</span>
-            </button>
+            <!-- Add New Bond Dropdown -->
+            <div class="relative add-bond-dropdown">
+              <button (click)="showAddBondDropdown = !showAddBondDropdown" 
+                      class="btn-primary flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                <span>Add Bond</span>
+                <svg class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div *ngIf="showAddBondDropdown" 
+                   class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                <div class="py-1">
+                  <button (click)="resetForm(); showAddBondModal = true; showAddBondDropdown = false"
+                          class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add New Bond
+                  </button>
+                  <button (click)="importExcelBond(); showAddBondDropdown = false"
+                          class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          [disabled]="isImporting">
+                    <svg *ngIf="!isImporting" class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                    </svg>
+                    <svg *ngIf="isImporting" class="animate-spin h-5 w-5 mr-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ isImporting ? 'Importing...' : 'Import Excel Bond' }}
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <!-- Export Dropdown -->
             <div class="relative">
