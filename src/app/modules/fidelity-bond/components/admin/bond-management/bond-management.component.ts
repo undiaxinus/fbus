@@ -548,14 +548,9 @@ export class BondManagementComponent implements OnInit {
       }
 
       // Log the activity
-      const userName = await this.getCurrentUserName();
-      await this.supabase.getClient()
-        .from('fbus_activities')
-        .insert({
-          action: `${this.isEditMode ? 'Updated' : 'Created'} bond for ${bond.first_name} ${bond.last_name}`,
-          user: userName,
-          timestamp: new Date().toISOString()
-        });
+      await this.logActivity(
+        `${this.isEditMode ? 'Updated' : 'Created'} bond for ${bond.first_name} ${bond.last_name}`
+      );
 
       // Reset form and reload bonds
       this.resetForm();
@@ -570,23 +565,43 @@ export class BondManagementComponent implements OnInit {
     }
   }
 
+  private async logActivity(action: string, userName?: string) {
+    try {
+      const user = userName || await this.getCurrentUserName();
+      const { error } = await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert({
+          action: action,
+          user: user,
+          timestamp: new Date().toISOString()
+        });
+
+      if (error) {
+        console.warn('Failed to log activity:', error);
+        // Don't throw error to allow the main operation to continue
+      }
+    } catch (error) {
+      console.warn('Error logging activity:', error);
+      // Don't throw error to allow the main operation to continue
+    }
+  }
+
   private async getCurrentUserName(): Promise<string> {
     try {
       const { data: sessionData, error: sessionError } = await this.supabase.getClient()
         .from('users')
         .select('name')
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (sessionError) throw sessionError;
-
-      if (sessionData && sessionData.name) {
-        return sessionData.name;
+      if (sessionError) {
+        console.warn('Error getting user name:', sessionError);
+        return 'Unknown User';
       }
 
-      return 'Unknown User';
+      return sessionData?.name || 'Unknown User';
     } catch (error) {
-      console.error('Error getting user name:', error);
+      console.warn('Error getting user name:', error);
       return 'Unknown User';
     }
   }
@@ -610,13 +625,10 @@ export class BondManagementComponent implements OnInit {
 
       // Log the activity
       const userName = await this.getCurrentUserName();
-      await this.supabase.getClient()
-        .from('fbus_activities')
-        .insert({
-          action: `Deleted bond for ${bond.first_name} ${bond.last_name}`,
-          user: userName,
-          timestamp: new Date().toISOString()
-        });
+      await this.logActivity(
+        `Deleted bond for ${bond.first_name} ${bond.last_name}`,
+        userName
+      );
 
       // Remove from local array and reset selected bond
         this.bonds = this.bonds.filter(b => b.id !== bond.id);
@@ -1077,19 +1089,7 @@ export class BondManagementComponent implements OnInit {
   }
 
   private async logExportActivity(type: string = 'Excel') {
-    try {
-      const { error: activityError } = await this.supabase.getClient()
-        .from('fbus_activities')
-        .insert([{
-          action: `Exported bond report as ${type}`,
-          user_name: await this.getCurrentUserName(),
-          created_at: new Date().toISOString()
-        }]);
-
-      if (activityError) throw activityError;
-    } catch (error) {
-      console.error('Error logging export activity:', error);
-    }
+    await this.logActivity(`Exported bond report as ${type}`);
   }
 
   private async getBase64Image(imagePath: string): Promise<string> {
@@ -1348,13 +1348,10 @@ export class BondManagementComponent implements OnInit {
 
       // Log the activity
       const userName = await this.getCurrentUserName();
-      await this.supabase.getClient()
-        .from('fbus_activities')
-        .insert({
-          action: `Bond renewed for ${renewedBond.first_name} ${renewedBond.last_name}`,
-          user: userName,
-          timestamp: new Date().toISOString()
-        });
+      await this.logActivity(
+        `Bond renewed for ${renewedBond.first_name} ${renewedBond.last_name}`,
+        userName
+      );
 
       // Reload bonds and close modal
       await this.loadBonds();
@@ -1414,7 +1411,6 @@ export class BondManagementComponent implements OnInit {
 
   removeAllDesignationFiles() {
     this.designationFiles = [];
-    this.designationImagePreview = null;
   }
 
   onRiskImageSelected(event: any): void {
@@ -1433,16 +1429,40 @@ export class BondManagementComponent implements OnInit {
     this.riskFiles.splice(index, 1);
   }
 
-  removeAllRiskFiles(): void {
+  removeAllRiskFiles() {
     this.riskFiles = [];
   }
 
   async removeProfileImage() {
-    if (this.documents['profile']) {
-      await this.documentService.deleteDocument(this.documents['profile'].id);
+    try {
+      if (this.documents['profile']) {
+        // Store the current document in case we need to restore it
+        const currentDoc = this.documents['profile'];
+        
+        // Clear UI first
+        this.profileImagePreview = null;
+        this.selectedProfileImage = null;
+        
+        try {
+          await this.documentService.deleteDocument(currentDoc.id);
+          // Only remove from documents if delete was successful
+          delete this.documents['profile'];
+        } catch (error) {
+          console.error('Error removing profile image:', error);
+          // Restore UI state if delete failed
+          this.profileImagePreview = currentDoc.file_url;
+          this.documents['profile'] = currentDoc;
+          throw error;
+        }
+      } else {
+        // If no document exists, just clear the UI state
+        this.profileImagePreview = null;
+        this.selectedProfileImage = null;
+      }
+    } catch (error) {
+      console.error('Error in removeProfileImage:', error);
+      throw error;
     }
-    this.profileImagePreview = null;
-    this.selectedProfileImage = null;
   }
 
   async removeDesignationImage() {
@@ -1463,53 +1483,150 @@ export class BondManagementComponent implements OnInit {
 
   private async uploadImages(bondId: string) {
     try {
-      // Upload profile image if exists
-      if (this.selectedProfileImage) {
-        await this.documentService.uploadDocument(
-          this.selectedProfileImage,
-          bondId,
-          'profile'
+      // Handle each document type independently
+      const uploadTasks = [];
+
+      // Handle profile image independently - only if there's a new profile image
+      if (this.selectedProfileImage && this.selectedProfileImage.size > 0) {
+        uploadTasks.push(
+          (async () => {
+            try {
+              if (this.selectedProfileImage instanceof File) {
+                // First upload the new document
+                const newDocument = await this.documentService.uploadDocument(
+                  this.selectedProfileImage,
+                  bondId,
+                  'profile'
+                );
+
+                // Only after successful upload, delete the old one
+                const existingProfile = await firstValueFrom(this.documentService.getDocumentByType(bondId, 'profile'));
+                if (existingProfile && existingProfile.id !== newDocument.id) {
+                  await this.documentService.deleteDocument(existingProfile.id);
+                }
+              }
+            } catch (error) {
+              console.error('Error handling profile image:', error);
+              // Restore preview if upload fails
+              if (this.documents['profile']) {
+                this.profileImagePreview = this.documents['profile'].file_url;
+              }
+              throw error;
+            }
+          })()
         );
       }
 
-      // Upload designation documents if exists
+      // Handle designation documents independently - only if there are new designation files
       if (this.designationFiles && this.designationFiles.length > 0) {
-        for (const file of this.designationFiles) {
-          // Skip if the file is from an existing document (has no actual file data)
-          if (file.size === 0) continue;
-          
-          // Skip if the file is already in the documents list
-          const isExistingDoc = this.documents['designation']?.file_name === file.name;
-          if (isExistingDoc) continue;
-          
-          await this.documentService.uploadDocument(
-            file,
-            bondId,
-            'designation'
-          );
-        }
+        uploadTasks.push(
+          (async () => {
+            try {
+              // Get existing designation documents
+              const existingDocs = await firstValueFrom(this.documentService.getDocumentsByType(bondId, 'designation'));
+              
+              // Only process new files (files with actual size)
+              const newFiles = this.designationFiles.filter(file => file.size > 0);
+              
+              // Keep track of which existing documents to keep
+              const existingFilesToKeep = new Set(
+                this.designationFiles
+                  .filter(file => file.size === 0)
+                  .map(file => this.cleanFileName(file.name))
+              );
+
+              // Delete only designation documents that are not in the keep list
+              for (const doc of existingDocs) {
+                try {
+                  const cleanedName = this.cleanFileName(doc.file_name);
+                  if (!existingFilesToKeep.has(cleanedName)) {
+                    await this.documentService.deleteDocument(doc.id);
+                  }
+                } catch (error) {
+                  console.error('Error deleting designation document:', error);
+                  // Continue with other operations
+                }
+              }
+
+              // Upload new designation files
+              for (const file of newFiles) {
+                try {
+                  await this.documentService.uploadDocument(
+                    file,
+                    bondId,
+                    'designation'
+                  );
+                } catch (error) {
+                  console.error('Error uploading designation file:', error);
+                  // Continue with other files
+                }
+              }
+            } catch (error) {
+              console.error('Error handling designation files:', error);
+              // Continue with other document types
+            }
+          })()
+        );
       }
 
-      // Upload risk documents if exists
+      // Handle risk documents independently - only if there are new risk files
       if (this.riskFiles && this.riskFiles.length > 0) {
-        for (const file of this.riskFiles) {
-          // Skip if the file is from an existing document (has no actual file data)
-          if (file.size === 0) continue;
-          
-          // Skip if the file is already in the documents list
-          const isExistingDoc = this.documents['risk']?.file_name === file.name;
-          if (isExistingDoc) continue;
-          
-          await this.documentService.uploadDocument(
-            file,
-            bondId,
-            'risk'
-          );
-        }
+        uploadTasks.push(
+          (async () => {
+            try {
+              // Get existing risk documents
+              const existingDocs = await firstValueFrom(this.documentService.getDocumentsByType(bondId, 'risk'));
+              
+              // Only process new files (files with actual size)
+              const newFiles = this.riskFiles.filter(file => file.size > 0);
+              
+              // Keep track of which existing documents to keep
+              const existingFilesToKeep = new Set(
+                this.riskFiles
+                  .filter(file => file.size === 0)
+                  .map(file => this.cleanFileName(file.name))
+              );
+
+              // Delete only risk documents that are not in the keep list
+              for (const doc of existingDocs) {
+                try {
+                  const cleanedName = this.cleanFileName(doc.file_name);
+                  if (!existingFilesToKeep.has(cleanedName)) {
+                    await this.documentService.deleteDocument(doc.id);
+                  }
+                } catch (error) {
+                  console.error('Error deleting risk document:', error);
+                  // Continue with other operations
+                }
+              }
+
+              // Upload new risk files
+              for (const file of newFiles) {
+                try {
+                  await this.documentService.uploadDocument(
+                    file,
+                    bondId,
+                    'risk'
+                  );
+                } catch (error) {
+                  console.error('Error uploading risk file:', error);
+                  // Continue with other files
+                }
+              }
+            } catch (error) {
+              console.error('Error handling risk files:', error);
+              // Continue with other document types
+            }
+          })()
+        );
       }
-    } catch (error) {
+
+      // Wait for all upload tasks to complete
+      await Promise.all(uploadTasks);
+
+    } catch (error: any) {
       console.error('Error uploading documents:', error);
-      throw error;
+      throw new Error(`Failed to upload documents: ${error.message}`);
     }
   }
 
@@ -1551,38 +1668,48 @@ export class BondManagementComponent implements OnInit {
 
       // First update the bond record
       const { data: bondData, error } = await this.supabase.getClient()
-      .from('fbus_list')
+        .from('fbus_list')
         .update({
           ...this.newBond,
           updated_at: new Date().toISOString()
         })
-      .eq('id', this.newBond.id)
+        .eq('id', this.newBond.id)
         .select()
         .single();
 
-    if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error(`Failed to update bond: ${error.message}`);
+      }
       if (!bondData || !bondData.id) throw new Error('Failed to update bond record');
 
       // Then upload documents
       await this.uploadImages(bondData.id);
 
       return bondData;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating bond:', error);
-      throw error;
+      throw new Error(`Failed to update bond: ${error.message}`);
     }
   }
 
   private async cleanupImageUrls(bond: FbusBond) {
     try {
-      if (bond.id) {
+      // Only cleanup documents if the bond is being deleted
+      if (bond.id && !this.isEditMode) {
         const documents = await firstValueFrom(this.documentService.getDocuments(bond.id));
         for (const doc of documents) {
-          await this.documentService.deleteDocument(doc.id);
+          try {
+            await this.documentService.deleteDocument(doc.id);
+          } catch (error) {
+            console.warn(`Failed to delete document ${doc.id}:`, error);
+            // Continue with other documents
+          }
         }
       }
     } catch (error) {
       console.error('Error cleaning up documents:', error);
+      // Don't throw error to allow the operation to continue
     }
   }
 
@@ -1611,13 +1738,6 @@ export class BondManagementComponent implements OnInit {
       // Subscribe to documents
       this.documentService.getDocuments(bondId).subscribe(
         (documents: FbusDocument[]) => {
-          // Reset all document arrays and previews
-          this.profileImagePreview = null;
-          this.designationImagePreview = null;
-          this.riskImagePreview = null;
-          this.designationFiles = [];
-          this.riskFiles = [];
-
           // Group documents by type
           const groupedDocs = documents.reduce((acc, doc) => {
             if (!acc[doc.document_type]) {
@@ -1627,8 +1747,8 @@ export class BondManagementComponent implements OnInit {
             return acc;
           }, {} as { [key: string]: FbusDocument[] });
 
-          // Store documents and set previews
-          this.documents = {};
+          // Handle each document type independently
+          // Only update the specific document type that exists, preserve others
           
           // Handle profile document
           if (groupedDocs['profile']?.[0]) {
@@ -1638,9 +1758,8 @@ export class BondManagementComponent implements OnInit {
 
           // Handle designation documents
           if (groupedDocs['designation']) {
-            // Store all designation documents
+            this.designationFiles = []; // Reset only designation files
             groupedDocs['designation'].forEach(doc => {
-              // Create a File-like object for each document with cleaned filename
               const cleanedName = this.cleanFileName(doc.file_name);
               const file = new File([], cleanedName, {
                 type: doc.mime_type,
@@ -1650,18 +1769,15 @@ export class BondManagementComponent implements OnInit {
                 value: doc.file_size
               });
               this.designationFiles.push(file);
-              // Store the document reference
-              if (!this.documents['designation']) {
-                this.documents['designation'] = doc;
-              }
             });
+            // Store the first designation document reference
+            this.documents['designation'] = groupedDocs['designation'][0];
           }
 
           // Handle risk documents
           if (groupedDocs['risk']) {
-            // Store all risk documents
+            this.riskFiles = []; // Reset only risk files
             groupedDocs['risk'].forEach(doc => {
-              // Create a File-like object for each document with cleaned filename
               const cleanedName = this.cleanFileName(doc.file_name);
               const file = new File([], cleanedName, {
                 type: doc.mime_type,
@@ -1671,11 +1787,9 @@ export class BondManagementComponent implements OnInit {
                 value: doc.file_size
               });
               this.riskFiles.push(file);
-              // Store the document reference
-              if (!this.documents['risk']) {
-                this.documents['risk'] = doc;
-              }
             });
+            // Store the first risk document reference
+            this.documents['risk'] = groupedDocs['risk'][0];
           }
         },
         (error: Error) => {
