@@ -5,6 +5,16 @@ import { SupabaseService } from '../../../../../core/services/supabase.service';
 import { UnitOffice } from '../../../../../models/unit-office.model';
 import { inject } from '@angular/core';
 
+interface FbusSignatory {
+  id: string;
+  position_title: string;
+  name: string;
+  rank: string;
+  designation: string;
+  office: string;
+  deleted_at?: string | null;
+}
+
 @Component({
   selector: 'app-admin-units',
   standalone: true,
@@ -73,6 +83,19 @@ export class AdminUnitsComponent implements OnInit {
   // Add this property to make Math available in the template
   Math = Math;
 
+  // Signatory related properties
+  showSignatoryModal = false;
+  showEditSignatoryModal = false;
+  signatories: FbusSignatory[] = [];
+  editingSignatory: FbusSignatory = {
+    id: '',
+    position_title: '',
+    name: '',
+    rank: '',
+    designation: '',
+    office: ''
+  };
+
   private showSuccess(message: string) {
     this.successMessage = message;
     setTimeout(() => {
@@ -81,11 +104,19 @@ export class AdminUnitsComponent implements OnInit {
   }
 
   async ngOnInit() {
-    await this.loadUnits();
-    await this.loadAvailableUnits();
-    await this.loadArchivedUnitsCount();
-    await this.loadDesignations();
-    await this.loadArchivedDesignationsCount();
+    try {
+      await Promise.all([
+        this.loadUnits(),
+        this.loadAvailableUnits(),
+        this.loadArchivedUnitsCount(),
+        this.loadDesignations(),
+        this.loadArchivedDesignationsCount(),
+        this.loadSignatories()
+      ]);
+    } catch (error) {
+      console.error('Error initializing component:', error);
+      this.showError('Failed to load initial data');
+    }
   }
 
   async loadAvailableUnits() {
@@ -651,6 +682,73 @@ export class AdminUnitsComponent implements OnInit {
     } catch (error) {
       console.error('Error restoring designation:', error);
       this.showError('Failed to restore designation');
+    }
+  }
+
+  async loadSignatories() {
+    try {
+      const { data, error } = await this.supabase.client
+        .from('fbus_signatories')
+        .select('*')
+        .is('deleted_at', null)
+        .order('position_title', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        this.signatories = data;
+      }
+    } catch (error) {
+      console.error('Error loading signatories:', error);
+      this.showError('Failed to load signatories');
+    }
+  }
+
+  editSignatory(signatory: FbusSignatory) {
+    this.editingSignatory = { ...signatory };
+    this.showEditSignatoryModal = true;
+  }
+
+  async updateSignatory() {
+    try {
+      const { error } = await this.supabase.client
+        .from('fbus_signatories')
+        .update({
+          name: this.editingSignatory.name,
+          rank: this.editingSignatory.rank,
+          designation: this.editingSignatory.designation,
+          office: this.editingSignatory.office,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', this.editingSignatory.id);
+
+      if (error) throw error;
+
+      // Log the activity
+      const { error: activityError } = await this.supabase.client
+        .from('fbus_activities')
+        .insert([{
+          action: `Updated signatory: ${this.editingSignatory.name}`,
+          user_name: await this.getCurrentUserName(),
+          created_at: new Date().toISOString()
+        }]);
+
+      if (activityError) throw activityError;
+
+      await this.loadSignatories();
+      this.showEditSignatoryModal = false;
+      this.editingSignatory = {
+        id: '',
+        position_title: '',
+        name: '',
+        rank: '',
+        designation: '',
+        office: ''
+      };
+      this.showSuccess('Signatory updated successfully');
+    } catch (error) {
+      console.error('Error updating signatory:', error);
+      this.showError('Failed to update signatory');
     }
   }
 
