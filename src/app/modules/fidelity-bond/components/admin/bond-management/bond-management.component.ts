@@ -164,7 +164,8 @@ export class BondManagementComponent implements OnInit {
     bond_premium: true,
     risk_no: true,
     effective_date: true,
-    date_of_cancellation: true
+    date_of_cancellation: true,
+    contact_no: true
   };
 
   columnLabels: { [key: string]: string } = {
@@ -178,7 +179,8 @@ export class BondManagementComponent implements OnInit {
     bond_premium: 'BOND PREMIUM',
     risk_no: 'RISK NO.',
     effective_date: 'EFFECTIVITY DATE',
-    date_of_cancellation: 'DATE OF CANCELLATION'
+    date_of_cancellation: 'DATE OF CANCELLATION',
+    contact_no: 'CONTACT NO.'
   };
 
   columnWidths: { [key: string]: number } = {
@@ -192,7 +194,8 @@ export class BondManagementComponent implements OnInit {
     bond_premium: 20,
     risk_no: 20,
     effective_date: 20,
-    date_of_cancellation: 25
+    date_of_cancellation: 25,
+    contact_no: 15
   };
 
   signatories: {
@@ -965,6 +968,8 @@ export class BondManagementComponent implements OnInit {
               return bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '';
             case 'date_of_cancellation':
               return bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : '';
+            case 'contact_no':
+              return bond.contact_no;
             default:
               return '';
           }
@@ -1219,6 +1224,8 @@ export class BondManagementComponent implements OnInit {
                 return bond.effective_date ? new Date(bond.effective_date).toLocaleDateString() : '';
               case 'date_of_cancellation':
                 return bond.date_of_cancellation ? new Date(bond.date_of_cancellation).toLocaleDateString() : '';
+              case 'contact_no':
+                return bond.contact_no;
               default:
                 return '';
             }
@@ -1782,6 +1789,7 @@ export class BondManagementComponent implements OnInit {
             const riskIndex = getColumnIndex('RISK NO.');
             const effectiveIndex = getColumnIndex('EFFECTIVITY DATE');
             const cancellationIndex = getColumnIndex('DATE OF CANCELLATION');
+            const contactIndex = getColumnIndex('CONTACT NO.');
 
             // Count total valid rows first
             totalRows = jsonData.slice(startRow).filter(row => row && Array.isArray(row) && row[rankIndex]).length;
@@ -1805,6 +1813,10 @@ export class BondManagementComponent implements OnInit {
                 // Get and clean the MCA value
                 const mcaValue = cleanAmount(currentRow[mcaIndex]);
                 console.log('Raw MCA value:', currentRow[mcaIndex], 'Cleaned MCA value:', mcaValue);
+
+                // Get contact number and ensure it's a string
+                const contactNumber = currentRow[contactIndex]?.toString().trim() || '';
+                console.log('Contact number:', contactNumber);
 
                 // Split the full name into parts
                 const fullName = currentRow[nameIndex]?.toString().trim() || '';
@@ -1839,8 +1851,8 @@ export class BondManagementComponent implements OnInit {
                   date_of_cancellation: this.formatDateForSupabase(currentRow[cancellationIndex]),
                   status: 'VALID',
                   days_remaning: '0',
-                  contact_no: '',
-                  units: unitValue, // Set units to the same value as unit_office
+                  contact_no: contactNumber,
+                  units: unitValue,
                   profile: '',
                   remark: '',
                   is_archived: false,
