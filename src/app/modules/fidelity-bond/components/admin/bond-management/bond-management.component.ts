@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { SupabaseService } from '../../../../../services/supabase.service';
 import { StorageService } from '../../../services/storage.service';
+import { DocumentService, FbusDocument } from '../../../services/document.service';
 import { firstValueFrom } from 'rxjs';
 import { delay, retryWhen, take, tap } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
@@ -12,6 +13,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { UserOptions } from 'jspdf-autotable';
+import { DomSanitizer } from '@angular/platform-browser';
+import { SafePipe } from '../../../../../shared/pipes/safe.pipe';
 
 interface FbusBond {
   id?: string;
@@ -38,9 +41,6 @@ interface FbusBond {
   dates?: string;
   is_archived: boolean;
   updated_at?: string;
-  profile_image_url?: string;
-  designation_image_url?: string;
-  risk_image_url?: string;
 }
 
 interface FbusSignatory {
@@ -55,7 +55,10 @@ interface FbusSignatory {
 @Component({
   selector: 'app-bond-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule
+  ],
   templateUrl: './bond-management.component.html',
   styles: [`
     @keyframes blink-warning {
@@ -87,7 +90,8 @@ interface FbusSignatory {
         text-align: center;
       }
     }
-  `]
+  `],
+  providers: [DocumentService, StorageService]
 })
 export class BondManagementComponent implements OnInit {
   bonds: FbusBond[] = [];
@@ -213,6 +217,15 @@ export class BondManagementComponent implements OnInit {
   showFullSizeImage: boolean = false;
   selectedImageUrl: string | null = null;
 
+  documents: { [key: string]: FbusDocument } = {};
+
+  designationFiles: File[] = [];
+  riskFiles: File[] = [];
+
+  showDocumentListModal = false;
+  selectedDocumentType: 'designation' | 'risk' | null = null;
+  documentsList: FbusDocument[] = [];
+
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
   }
@@ -237,6 +250,8 @@ export class BondManagementComponent implements OnInit {
   constructor(
     private supabase: SupabaseService,
     private storageService: StorageService,
+    private documentService: DocumentService,
+    private sanitizer: DomSanitizer
   ) {}
 
   private getEmptyBond(): FbusBond {
@@ -335,29 +350,29 @@ export class BondManagementComponent implements OnInit {
     throw new Error('Operation failed after maximum retries');
   }
 
-  async loadBonds() {
+  private async loadBonds() {
     try {
-      const { data, error } = await this.retryOperation(async () => {
-        return await this.supabase.getClient()
+      const { data: bonds, error } = await this.supabase.getClient()
           .from('fbus_list')
           .select('*')
-          .order('updated_at', { ascending: false })
-          .order('dates', { ascending: false });
-      });
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading bonds:', error);
-        throw new Error('Failed to load bonds');
+      if (error) throw error;
+
+      this.bonds = bonds || [];
+      this.activeBonds = this.bonds.filter(bond => !bond.is_archived);
+      this.archivedBonds = this.bonds.filter(bond => bond.is_archived);
+
+      // Load documents for each bond
+      for (const bond of this.bonds) {
+        if (bond.id) {
+          await this.loadDocuments(bond.id);
+        }
       }
 
-      if (data) {
-        this.bonds = data;
-        this.activeBonds = data.filter(bond => !bond.is_archived);
-        this.archivedBonds = data.filter(bond => bond.is_archived);
-        this.expiredBonds = this.filteredExpiredBonds;
-      }
-    } catch (error: any) {
-      throw error;
+    } catch (error) {
+      console.error('Error loading bonds:', error);
+      this.error = 'Failed to load bonds. Please try again.';
     }
   }
 
@@ -496,55 +511,48 @@ export class BondManagementComponent implements OnInit {
     return bonds;
   }
 
-  async onSubmitBond(form: NgForm) {
+  resetForm() {
+    this.isEditMode = false;
+    this.newBond = this.getEmptyBond();
+    this.removeProfileImage();
+    this.removeDesignationImage();
+    this.removeRiskImage();
+    this.profileImagePreview = null;
+    this.designationImagePreview = null;
+    this.riskImagePreview = null;
+    this.selectedProfileImage = null;
+    this.selectedDesignationImage = null;
+    this.selectedRiskImage = null;
+  }
+
+  async onSubmit(form: NgForm) {
     if (!form.valid) return;
 
     this.isSubmitting = true;
     this.error = null;
 
     try {
-      // Upload images if selected
-      if (this.selectedProfileImage) {
-        try {
-          const profileUrl = await this.storageService.uploadProfileImage(this.selectedProfileImage);
-          this.newBond.profile_image_url = profileUrl;
-        } catch (error) {
-          console.error('Error uploading profile image:', error);
-          throw new Error('Failed to upload profile image. Please try again.');
-        }
-      }
-
-      if (this.selectedDesignationImage) {
-        try {
-          const designationUrl = await this.storageService.uploadDesignationImage(this.selectedDesignationImage);
-          this.newBond.designation_image_url = designationUrl;
-        } catch (error) {
-          console.error('Error uploading designation image:', error);
-          throw new Error('Failed to upload designation image. Please try again.');
-        }
-      }
-
-      if (this.selectedRiskImage) {
-        try {
-          const riskUrl = await this.storageService.uploadRiskImage(this.selectedRiskImage);
-          this.newBond.risk_image_url = riskUrl;
-        } catch (error) {
-          console.error('Error uploading risk image:', error);
-          throw new Error('Failed to upload risk image. Please try again.');
-        }
-      }
-
-      // Continue with existing bond submission logic
+      let bond;
       if (this.isEditMode) {
-        await this.updateBond();
+        bond = await this.updateBond();
       } else {
-        await this.createBond();
+        bond = await this.createBond();
       }
 
-      // Reset form and close modal only if everything succeeds
+      // Log the activity
+      const userName = await this.getCurrentUserName();
+      await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert({
+          action: `${this.isEditMode ? 'Updated' : 'Created'} bond for ${bond.first_name} ${bond.last_name}`,
+          user: userName,
+          timestamp: new Date().toISOString()
+        });
+
+      // Reset form and reload bonds
       this.resetForm();
-      this.showAddBondModal = false;
       await this.loadBonds();
+      this.showAddBondModal = false;
 
     } catch (error: any) {
       console.error('Error submitting bond:', error);
@@ -576,8 +584,15 @@ export class BondManagementComponent implements OnInit {
   }
 
   async onDeleteBond(bond: FbusBond) {
-    if (confirm(`Are you sure you want to delete the bond for ${bond.first_name} ${bond.last_name}?`)) {
+    if (!confirm(`Are you sure you want to delete the bond for ${bond.first_name} ${bond.last_name}?`)) {
+      return;
+    }
+
       try {
+      // Clean up documents first
+      await this.cleanupImageUrls(bond);
+
+      // Delete the bond
         const { error } = await this.supabase.getClient()
           .from('fbus_list')
           .delete()
@@ -585,11 +600,26 @@ export class BondManagementComponent implements OnInit {
 
         if (error) throw error;
 
+      // Log the activity
+      const userName = await this.getCurrentUserName();
+      await this.supabase.getClient()
+        .from('fbus_activities')
+        .insert({
+          action: `Deleted bond for ${bond.first_name} ${bond.last_name}`,
+          user: userName,
+          timestamp: new Date().toISOString()
+        });
+
+      // Remove from local array and reset selected bond
         this.bonds = this.bonds.filter(b => b.id !== bond.id);
+      if (this.selectedBond?.id === bond.id) {
+        this.selectedBond = null;
+        this.showViewBondModal = false;
+      }
+
       } catch (error) {
         console.error('Error deleting bond:', error);
         this.error = 'Failed to delete bond. Please try again.';
-      }
     }
   }
 
@@ -598,15 +628,16 @@ export class BondManagementComponent implements OnInit {
       this.isEditMode = true;
       this.newBond = { ...bond };
       
-      // Set up image previews if URLs exist
-      if (bond.profile_image_url) {
-        this.profileImagePreview = bond.profile_image_url;
-      }
-      if (bond.designation_image_url) {
-        this.designationImagePreview = bond.designation_image_url;
-      }
-      if (bond.risk_image_url) {
-        this.riskImagePreview = bond.risk_image_url;
+      // Reset document arrays and previews
+      this.designationFiles = [];
+      this.riskFiles = [];
+      this.profileImagePreview = null;
+      this.designationImagePreview = null;
+      this.riskImagePreview = null;
+      
+      // Load documents and set up previews
+      if (bond.id) {
+        await this.loadDocuments(bond.id);
       }
       
       this.showAddBondModal = true;
@@ -797,9 +828,12 @@ export class BondManagementComponent implements OnInit {
     this.currentPage = 1;
   }
 
-  onViewBond(bond: FbusBond) {
+  async onViewBond(bond: FbusBond) {
     this.selectedBond = bond;
     this.showViewBondModal = true;
+    if (bond.id) {
+      await this.loadDocuments(bond.id);
+    }
   }
 
   calculateDaysRemaining(bond: FbusBond): string {
@@ -1324,177 +1358,217 @@ export class BondManagementComponent implements OnInit {
 
   async onProfileImageSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      if (file.size > 5242880) { // 5MB
-        this.error = 'Profile image size must be less than 5MB';
+    if (!file) return;
+
+    try {
+      // Check file size (10MB limit)
+      if (file.size > 10485760) {
+        alert('File size must be less than 10MB');
         return;
       }
-      if (!file.type.startsWith('image/')) {
-        this.error = 'Only image files are allowed for profile picture';
-        return;
+
+      // Show preview if it's an image
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.profileImagePreview = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
       }
+
       this.selectedProfileImage = file;
-      this.profileImagePreview = URL.createObjectURL(file);
+    } catch (error) {
+      console.error('Error handling profile image:', error);
+      alert('Error handling file. Please try again.');
     }
   }
 
-  async onDesignationImageSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      if (file.size > 5242880) { // 5MB
-        this.error = 'Designation image size must be less than 5MB';
-        return;
+  onDesignationImageSelected(event: any) {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Add new files to existing array
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type === 'application/pdf') {
+          this.designationFiles.push(file);
+        }
       }
-      if (!file.type.startsWith('image/')) {
-        this.error = 'Only image files are allowed for designation';
-        return;
-      }
-      this.selectedDesignationImage = file;
-      this.designationImagePreview = URL.createObjectURL(file);
     }
   }
 
-  async onRiskImageSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      if (file.size > 5242880) { // 5MB
-        this.error = 'Risk image size must be less than 5MB';
-        return;
-      }
-      if (!file.type.startsWith('image/')) {
-        this.error = 'Only image files are allowed for risk document';
-        return;
-      }
-      this.selectedRiskImage = file;
-      this.riskImagePreview = URL.createObjectURL(file);
-    }
+  removeDesignationFile(index: number) {
+    this.designationFiles.splice(index, 1);
   }
 
-  removeProfileImage() {
-    this.selectedProfileImage = null;
-    this.profileImagePreview = null;
-    if (this.newBond) {
-      this.newBond.profile_image_url = undefined;
-    }
-  }
-
-  removeDesignationImage() {
-    this.selectedDesignationImage = null;
+  removeAllDesignationFiles() {
+    this.designationFiles = [];
     this.designationImagePreview = null;
-    if (this.newBond) {
-      this.newBond.designation_image_url = undefined;
+  }
+
+  onRiskImageSelected(event: any): void {
+    const files = event.target.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type === 'application/pdf') {
+          this.riskFiles.push(file);
+        }
+      }
     }
   }
 
-  removeRiskImage() {
-    this.selectedRiskImage = null;
+  removeRiskFile(index: number): void {
+    this.riskFiles.splice(index, 1);
+  }
+
+  removeAllRiskFiles(): void {
+    this.riskFiles = [];
+  }
+
+  async removeProfileImage() {
+    if (this.documents['profile']) {
+      await this.documentService.deleteDocument(this.documents['profile'].id);
+    }
+    this.profileImagePreview = null;
+    this.selectedProfileImage = null;
+  }
+
+  async removeDesignationImage() {
+    if (this.documents['designation']) {
+      await this.documentService.deleteDocument(this.documents['designation'].id);
+    }
+    this.designationImagePreview = null;
+    this.designationFiles = [];
+  }
+
+  async removeRiskImage() {
+    if (this.documents['risk']) {
+      await this.documentService.deleteDocument(this.documents['risk'].id);
+    }
     this.riskImagePreview = null;
-    if (this.newBond) {
-      this.newBond.risk_image_url = undefined;
+    this.selectedRiskImage = null;
+  }
+
+  private async uploadImages(bondId: string) {
+    try {
+      // Upload profile image if exists
+      if (this.selectedProfileImage) {
+        await this.documentService.uploadDocument(
+          this.selectedProfileImage,
+          bondId,
+          'profile'
+        );
+      }
+
+      // Upload designation documents if exists
+      if (this.designationFiles && this.designationFiles.length > 0) {
+        for (const file of this.designationFiles) {
+          // Skip if the file is from an existing document (has no actual file data)
+          if (file.size === 0) continue;
+          
+          // Skip if the file is already in the documents list
+          const isExistingDoc = this.documents['designation']?.file_name === file.name;
+          if (isExistingDoc) continue;
+          
+          await this.documentService.uploadDocument(
+            file,
+            bondId,
+            'designation'
+          );
+        }
+      }
+
+      // Upload risk documents if exists
+      if (this.riskFiles && this.riskFiles.length > 0) {
+        for (const file of this.riskFiles) {
+          // Skip if the file is from an existing document (has no actual file data)
+          if (file.size === 0) continue;
+          
+          // Skip if the file is already in the documents list
+          const isExistingDoc = this.documents['risk']?.file_name === file.name;
+          if (isExistingDoc) continue;
+          
+          await this.documentService.uploadDocument(
+            file,
+            bondId,
+            'risk'
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      throw error;
     }
   }
 
-  private async uploadImage(file: File, bucket: string): Promise<string> {
-    return this.storageService.uploadFile(file, bucket);
+  private getFileExtension(filename: string): string {
+    return '.' + filename.split('.').pop();
   }
 
   private async createBond() {
-    const bondData = { ...this.newBond };
-    const { data, error } = await this.supabase.getClient()
+    try {
+      // First create the bond record
+      const { data: bond, error } = await this.supabase.getClient()
       .from('fbus_list')
-      .insert([bondData])
-      .select();
+        .insert([{
+          ...this.newBond,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
 
     if (error) throw error;
+      if (!bond || !bond.id) throw new Error('Failed to create bond record');
 
-    if (data) {
-      // Log the activity
-      const { error: activityError } = await this.supabase.getClient()
-        .from('fbus_activities')
-        .insert([{
-          action: `Added new bond for ${bondData.first_name} ${bondData.last_name}`,
-          user_name: await this.getCurrentUserName(),
-          created_at: new Date().toISOString()
-        }]);
+      // Then upload documents
+      await this.uploadImages(bond.id);
 
-      if (activityError) throw activityError;
-
-      this.activeBonds = [data[0], ...this.activeBonds];
-      this.resetForm();
+      return bond;
+    } catch (error) {
+      console.error('Error creating bond:', error);
+      throw error;
     }
   }
 
   private async updateBond() {
-    const bondData = { ...this.newBond };
-    
-    // Only update image URLs if new images were selected
-    if (!this.selectedProfileImage) {
-      delete bondData.profile_image_url;
-    }
-    if (!this.selectedDesignationImage) {
-      delete bondData.designation_image_url;
-    }
-    if (!this.selectedRiskImage) {
-      delete bondData.risk_image_url;
-    }
+    try {
+      if (!this.newBond.id) throw new Error('Bond ID is required for update');
 
-    const { data, error } = await this.supabase.getClient()
+      // First update the bond record
+      const { data: bond, error } = await this.supabase.getClient()
       .from('fbus_list')
-      .update(bondData)
+        .update({
+          ...this.newBond,
+          updated_at: new Date().toISOString()
+        })
       .eq('id', this.newBond.id)
-      .select();
+        .select()
+        .single();
 
     if (error) throw error;
+      if (!bond || !bond.id) throw new Error('Failed to update bond record');
 
-    if (data) {
-      // Log the activity
-      const { error: activityError } = await this.supabase.getClient()
-        .from('fbus_activities')
-        .insert([{
-          action: `Updated bond for ${bondData.first_name} ${bondData.last_name}`,
-          user_name: await this.getCurrentUserName(),
-          created_at: new Date().toISOString()
-        }]);
+      // Then upload documents
+      await this.uploadImages(bond.id);
 
-      if (activityError) throw activityError;
-
-      const index = this.activeBonds.findIndex(b => b.id === this.newBond.id);
-      if (index !== -1) {
-        this.activeBonds[index] = data[0];
-      }
-      this.resetForm();
+      return bond;
+    } catch (error) {
+      console.error('Error updating bond:', error);
+      throw error;
     }
-  }
-
-  resetForm() {
-    this.isEditMode = false;
-    this.newBond = this.getEmptyBond();
-    this.removeProfileImage();
-    this.removeDesignationImage();
-    this.removeRiskImage();
-    this.profileImagePreview = null;
-    this.designationImagePreview = null;
-    this.riskImagePreview = null;
-    this.selectedProfileImage = null;
-    this.selectedDesignationImage = null;
-    this.selectedRiskImage = null;
   }
 
   private async cleanupImageUrls(bond: FbusBond) {
     try {
-      if (bond.profile_image_url) {
-        await this.storageService.deleteFile(bond.profile_image_url);
-      }
-
-      if (bond.designation_image_url) {
-        await this.storageService.deleteFile(bond.designation_image_url);
-      }
-
-      if (bond.risk_image_url) {
-        await this.storageService.deleteFile(bond.risk_image_url);
+      if (bond.id) {
+        const documents = await firstValueFrom(this.documentService.getDocuments(bond.id));
+        for (const doc of documents) {
+          await this.documentService.deleteDocument(doc.id);
+        }
       }
     } catch (error) {
-      console.error('Error cleaning up image files:', error);
+      console.error('Error cleaning up documents:', error);
     }
   }
 
@@ -1503,5 +1577,139 @@ export class BondManagementComponent implements OnInit {
     Object.keys(this.selectedColumns).forEach(key => {
       this.selectedColumns[key] = true;
     });
+  }
+
+  /**
+   * Clean up filename for display by removing timestamp and bond ID
+   */
+  cleanFileName(fileName: string): string {
+    // Remove the document type prefix, bond ID, and timestamp
+    const parts = fileName.split('_');
+    if (parts.length >= 4) {
+      // Return everything after the timestamp (original filename)
+      return parts.slice(3).join('_');
+    }
+    return fileName;
+  }
+
+  private async loadDocuments(bondId: string) {
+    try {
+      // Subscribe to documents
+      this.documentService.getDocuments(bondId).subscribe(
+        (documents: FbusDocument[]) => {
+          // Reset all document arrays and previews
+          this.profileImagePreview = null;
+          this.designationImagePreview = null;
+          this.riskImagePreview = null;
+          this.designationFiles = [];
+          this.riskFiles = [];
+
+          // Group documents by type
+          const groupedDocs = documents.reduce((acc, doc) => {
+            if (!acc[doc.document_type]) {
+              acc[doc.document_type] = [];
+            }
+            acc[doc.document_type].push(doc);
+            return acc;
+          }, {} as { [key: string]: FbusDocument[] });
+
+          // Store documents and set previews
+          this.documents = {};
+          
+          // Handle profile document
+          if (groupedDocs['profile']?.[0]) {
+            this.documents['profile'] = groupedDocs['profile'][0];
+            this.profileImagePreview = groupedDocs['profile'][0].file_url;
+          }
+
+          // Handle designation documents
+          if (groupedDocs['designation']) {
+            // Store all designation documents
+            groupedDocs['designation'].forEach(doc => {
+              // Create a File-like object for each document with cleaned filename
+              const cleanedName = this.cleanFileName(doc.file_name);
+              const file = new File([], cleanedName, {
+                type: doc.mime_type,
+                lastModified: new Date(doc.updated_at).getTime()
+              });
+              Object.defineProperty(file, 'size', {
+                value: doc.file_size
+              });
+              this.designationFiles.push(file);
+              // Store the document reference
+              if (!this.documents['designation']) {
+                this.documents['designation'] = doc;
+              }
+            });
+          }
+
+          // Handle risk documents
+          if (groupedDocs['risk']) {
+            // Store all risk documents
+            groupedDocs['risk'].forEach(doc => {
+              // Create a File-like object for each document with cleaned filename
+              const cleanedName = this.cleanFileName(doc.file_name);
+              const file = new File([], cleanedName, {
+                type: doc.mime_type,
+                lastModified: new Date(doc.updated_at).getTime()
+              });
+              Object.defineProperty(file, 'size', {
+                value: doc.file_size
+              });
+              this.riskFiles.push(file);
+              // Store the document reference
+              if (!this.documents['risk']) {
+                this.documents['risk'] = doc;
+              }
+            });
+          }
+        },
+        (error: Error) => {
+          console.error('Error loading documents:', error);
+        }
+      );
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    }
+  }
+
+  getDocumentUrl(type: 'profile' | 'designation' | 'risk'): string | null {
+    try {
+      const doc = this.documents[type];
+      if (!doc || !doc.file_url) return null;
+      return doc.file_url;
+    } catch (error) {
+      console.error(`Error getting document URL for type ${type}:`, error);
+      return null;
+    }
+  }
+
+  openPdfInNewTab(documentUrl: string): void {
+    if (!documentUrl) return;
+    window.open(documentUrl, '_blank');
+  }
+
+  async openDocumentsList(documentType: 'designation' | 'risk') {
+    this.selectedDocumentType = documentType;
+    this.documentService.getDocumentsByType(this.selectedBond!.id!, documentType)
+      .subscribe(documents => {
+        this.documentsList = documents;
+        this.showDocumentListModal = true;
+      });
+  }
+
+  getFormattedDate(date: Date): string {
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  isLatestDocument(document: FbusDocument): boolean {
+    if (!this.documentsList.length) return false;
+    return document.id === this.documentsList[0].id;
   }
 }

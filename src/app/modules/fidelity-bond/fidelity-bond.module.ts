@@ -14,6 +14,7 @@ import { UserNotificationsComponent } from './components/user/notifications/user
 import { UserProfileComponent } from './components/user/profile/user-profile.component';
 import { SidebarComponent } from './components/shared/sidebar/sidebar.component';
 import { SharedModule } from '../../shared/shared.module';
+import { BondManagementComponent } from './components/admin/bond-management/bond-management.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -61,27 +62,23 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [
-  ],
+  declarations: [],
   imports: [
     CommonModule,
-    SharedModule,
-    RouterModule.forChild(routes),
     FormsModule,
-    ReactiveFormsModule,
+    SharedModule,
+    BondManagementComponent,
+    AdminDashboardComponent,
     LoginComponent,
     AdminLayoutComponent,
     UserLayoutComponent,
     UserDashboardComponent,
     SidebarComponent,
-    AdminDashboardComponent,
     UserBondsComponent,
     UserRequestsComponent,
     UserNotificationsComponent,
-    UserProfileComponent
-  ],
-  exports: [
-    RouterModule
+    UserProfileComponent,
+    RouterModule.forChild(routes)
   ]
 })
 export class FidelityBondModule { }

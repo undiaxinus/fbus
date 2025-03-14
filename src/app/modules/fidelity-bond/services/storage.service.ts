@@ -29,8 +29,7 @@ export class StorageService {
           .storage
           .createBucket(this.BUCKET_NAME, {
             public: true,
-            fileSizeLimit: 5242880, // 5MB
-            allowedMimeTypes: ['image/*']
+            fileSizeLimit: 10485760, // 10MB
           });
 
         if (createError) {
