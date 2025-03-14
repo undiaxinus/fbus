@@ -51,7 +51,7 @@
               <div *ngIf="showAddBondDropdown" 
                    class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                 <div class="py-1">
-                  <button (click)="resetForm(); showAddBondModal = true; showAddBondDropdown = false"
+                  <button (click)="onAddNewBond(); showAddBondDropdown = false"
                           class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>

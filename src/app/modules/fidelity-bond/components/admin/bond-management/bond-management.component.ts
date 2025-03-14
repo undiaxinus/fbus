@@ -522,15 +522,27 @@ export class BondManagementComponent implements OnInit {
   resetForm() {
     this.isEditMode = false;
     this.newBond = this.getEmptyBond();
-    this.removeProfileImage();
-    this.removeDesignationImage();
-    this.removeRiskImage();
+    
+    // Clear all document-related state
+    this.documents = {};
+    this.designationFiles = [];
+    this.riskFiles = [];
+    
+    // Clear all previews
     this.profileImagePreview = null;
     this.designationImagePreview = null;
     this.riskImagePreview = null;
+    
+    // Clear all selected files
     this.selectedProfileImage = null;
     this.selectedDesignationImage = null;
     this.selectedRiskImage = null;
+  }
+
+  onAddNewBond() {
+    // Reset everything before showing the modal
+    this.resetForm();
+    this.showAddBondModal = true;
   }
 
   async onSubmit(form: NgForm) {
@@ -872,8 +884,7 @@ export class BondManagementComponent implements OnInit {
 
   onCancelEdit() {
     this.showAddBondModal = false;
-    this.isEditMode = false;
-    this.newBond = this.getEmptyBond();
+    this.resetForm();
   }
 
   toggleColumn(column: string) {
