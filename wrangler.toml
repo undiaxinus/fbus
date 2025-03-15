@@ -1,14 +1,26 @@
+name = "fbus-website"
+compatibility_date = "2024-01-01"
+
 [build]
 command = "npm run build"
-pages_build_output_dir = "dist/fbus/browser"
 
 [site]
-bucket = "./dist/fbus/browser"
+bucket = "./dist/fbus-web/browser"
 
 [env.production]
 name = "fbus-website"
 
+# Handle all routes for Angular's client-side routing
 [[redirects]]
 from = "/*"
 to = "/index.html"
-status = 200 
+status = 200
+
+# Configure headers for security and caching
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "interest-cohort=()" 
