@@ -16,6 +16,7 @@ import { UserOptions } from 'jspdf-autotable';
 import { DomSanitizer } from '@angular/platform-browser';
 import { SafePipe } from '../../../../../shared/pipes/safe.pipe';
 import { ClickOutsideDirective } from '../../../../../shared/directives/click-outside.directive';
+import { BondHistory } from '../../../models/bond-history.model';
 
 interface FbusBond {
   id?: string;
@@ -233,6 +234,10 @@ export class BondManagementComponent implements OnInit {
   showAddBondDropdown: boolean = false;
 
   isImporting: boolean = false;
+
+  bondHistory: BondHistory[] = [];
+
+  activeTab: 'details' | 'documents' | 'history' = 'details';
 
   get totalPages() {
     return Math.ceil(this.filteredBonds.length / this.itemsPerPage);
@@ -584,8 +589,8 @@ export class BondManagementComponent implements OnInit {
         .from('fbus_activities')
         .insert({
           action: action,
-          user: user,
-          timestamp: new Date().toISOString()
+          user_name: user,
+          created_at: new Date().toISOString()
         });
 
       if (error) {
@@ -623,17 +628,20 @@ export class BondManagementComponent implements OnInit {
       return;
     }
 
-      try {
+    try {
+      // Create history record before deletion
+      await this.createHistoryRecord(bond, 'DELETE');
+
       // Clean up documents first
       await this.cleanupImageUrls(bond);
 
       // Delete the bond
-        const { error } = await this.supabase.getClient()
-          .from('fbus_list')
-          .delete()
-          .eq('id', bond.id);
+      const { error } = await this.supabase.getClient()
+        .from('fbus_list')
+        .delete()
+        .eq('id', bond.id);
 
-        if (error) throw error;
+      if (error) throw error;
 
       // Log the activity
       const userName = await this.getCurrentUserName();
@@ -643,15 +651,15 @@ export class BondManagementComponent implements OnInit {
       );
 
       // Remove from local array and reset selected bond
-        this.bonds = this.bonds.filter(b => b.id !== bond.id);
+      this.bonds = this.bonds.filter(b => b.id !== bond.id);
       if (this.selectedBond?.id === bond.id) {
         this.selectedBond = null;
         this.showViewBondModal = false;
       }
 
-      } catch (error) {
-        console.error('Error deleting bond:', error);
-        this.error = 'Failed to delete bond. Please try again.';
+    } catch (error) {
+      console.error('Error deleting bond:', error);
+      this.error = 'Failed to delete bond. Please try again.';
     }
   }
 
@@ -1339,11 +1347,14 @@ export class BondManagementComponent implements OnInit {
     try {
       if (!this.bondToRenew) return;
 
+      // Get the old bond data before renewal
+      const oldBond = { ...this.bondToRenew };
+
       // Create a new bond object with renewed dates
       const renewedBond: FbusBond = {
         ...this.bondToRenew,
-        effective_date: this.today.toISOString().split('T')[0], // Set to today
-        date_of_cancellation: this.oneYearFromNow.toISOString().split('T')[0], // Set to 1 year from today
+        effective_date: this.today.toISOString().split('T')[0],
+        date_of_cancellation: this.oneYearFromNow.toISOString().split('T')[0],
         status: 'VALID',
         days_remaning: '365',
         updated_at: new Date().toISOString()
@@ -1356,6 +1367,9 @@ export class BondManagementComponent implements OnInit {
         .eq('id', renewedBond.id);
 
       if (error) throw error;
+
+      // Create history record for renewal
+      await this.createHistoryRecord(renewedBond, 'RENEW', oldBond);
 
       // Log the activity
       const userName = await this.getCurrentUserName();
@@ -1661,6 +1675,9 @@ export class BondManagementComponent implements OnInit {
       if (error) throw error;
       if (!bondData || !bondData.id) throw new Error('Failed to create bond record');
 
+      // Create history record
+      await this.createHistoryRecord(bondData, 'CREATE');
+
       // Then upload documents - only if we're creating from the form
       if (!bond) {
         await this.uploadImages(bondData.id);
@@ -1676,6 +1693,13 @@ export class BondManagementComponent implements OnInit {
   private async updateBond() {
     try {
       if (!this.newBond.id) throw new Error('Bond ID is required for update');
+
+      // Get the old bond data before update
+      const { data: oldBond } = await this.supabase.getClient()
+        .from('fbus_list')
+        .select('*')
+        .eq('id', this.newBond.id)
+        .single();
 
       // First update the bond record
       const { data: bondData, error } = await this.supabase.getClient()
@@ -1694,6 +1718,9 @@ export class BondManagementComponent implements OnInit {
       }
       if (!bondData || !bondData.id) throw new Error('Failed to update bond record');
 
+      // Create history record with changes
+      await this.createHistoryRecord(bondData, 'UPDATE', oldBond);
+
       // Then upload documents
       await this.uploadImages(bondData.id);
 
@@ -1701,6 +1728,60 @@ export class BondManagementComponent implements OnInit {
     } catch (error: any) {
       console.error('Error updating bond:', error);
       throw new Error(`Failed to update bond: ${error.message}`);
+    }
+  }
+
+  private async createHistoryRecord(bond: FbusBond, changeType: 'CREATE' | 'UPDATE' | 'DELETE' | 'RENEW', oldBond?: FbusBond) {
+    try {
+      const historyRecord: BondHistory = {
+        bond_id: bond.id!,
+        first_name: bond.first_name,
+        middle_name: bond.middle_name,
+        last_name: bond.last_name,
+        unit_office: bond.unit_office,
+        rank: bond.rank,
+        designation: bond.designation,
+        mca: parseFloat(bond.mca) || 0,
+        amount_of_bond: parseFloat(bond.amount_of_bond) || 0,
+        bond_premium: parseFloat(bond.bond_premium) || 0,
+        risk_no: bond.risk_no,
+        effective_date: bond.effective_date,
+        date_of_cancellation: bond.date_of_cancellation,
+        contact_no: bond.contact_no,
+        change_type: changeType,
+        created_at: new Date().toISOString()
+      };
+
+      // If this is an update, calculate changed fields and values
+      if (changeType === 'UPDATE' && oldBond) {
+        const changedFields: string[] = [];
+        const oldValues: Record<string, any> = {};
+        const newValues: Record<string, any> = {};
+
+        const excludedFields = ['id', 'created_at', 'updated_at'];
+        Object.keys(bond).forEach(key => {
+          if (!excludedFields.includes(key) && 
+              JSON.stringify(bond[key as keyof FbusBond]) !== JSON.stringify(oldBond[key as keyof FbusBond])) {
+            changedFields.push(key);
+            oldValues[key] = oldBond[key as keyof FbusBond];
+            newValues[key] = bond[key as keyof FbusBond];
+          }
+        });
+
+        historyRecord.changed_fields = changedFields;
+        historyRecord.old_values = oldValues;
+        historyRecord.new_values = newValues;
+      }
+
+      const { error } = await this.supabase.getClient()
+        .from('fbus_history')
+        .insert([historyRecord]);
+
+      if (error) {
+        console.warn('Failed to create history record:', error);
+      }
+    } catch (error) {
+      console.warn('Error creating history record:', error);
     }
   }
 
@@ -2081,5 +2162,68 @@ export class BondManagementComponent implements OnInit {
     if (!target.closest('.add-bond-dropdown')) {
       this.showAddBondDropdown = false;
     }
+  }
+
+  async loadBondHistory() {
+    if (!this.selectedBond?.id) return;
+
+    try {
+      const { data: history, error } = await this.supabase.getClient()
+        .from('fbus_history')
+        .select('*')
+        .eq('bond_id', this.selectedBond.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      this.bondHistory = history || [];
+    } catch (error) {
+      console.error('Error loading bond history:', error);
+      this.error = 'Failed to load bond history';
+    }
+  }
+
+  getHistoryBadgeColor(changeType: string): string {
+    switch (changeType) {
+      case 'CREATE':
+        return 'bg-green-100 text-green-800';
+      case 'UPDATE':
+        return 'bg-blue-100 text-blue-800';
+      case 'DELETE':
+        return 'bg-red-100 text-red-800';
+      case 'RENEW':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getHistoryDescription(record: BondHistory): string {
+    switch (record.change_type) {
+      case 'CREATE':
+        return `Bond was created for ${record.first_name} ${record.last_name}`;
+      case 'UPDATE':
+        return `Bond details were updated for ${record.first_name} ${record.last_name}`;
+      case 'DELETE':
+        return `Bond was deleted for ${record.first_name} ${record.last_name}`;
+      case 'RENEW':
+        return `Bond was renewed for ${record.first_name} ${record.last_name}`;
+      default:
+        return 'Bond was modified';
+    }
+  }
+
+  formatFieldName(field: string): string {
+    return field
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  formatFieldValue(value: any): string {
+    if (value === null || value === undefined) return 'N/A';
+    if (typeof value === 'number') return value.toString();
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (value instanceof Date) return new Date(value).toLocaleDateString();
+    return value.toString();
   }
 }
