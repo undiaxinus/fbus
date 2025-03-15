@@ -155,7 +155,7 @@ export class SidebarComponent implements OnInit {
     if (userStr) {
       try {
         this.currentUser = JSON.parse(userStr);
-        this.menuItems = this.currentUser?.role === 'admin' ? this.adminMenuItems : this.userMenuItems;
+        this.menuItems = this.currentUser?.role === 'fbus_admin' ? this.adminMenuItems : this.userMenuItems;
       } catch (error) {
         console.error('Error parsing user data:', error);
         this.redirectToLogin();

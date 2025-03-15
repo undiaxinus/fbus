@@ -1,0 +1,81 @@
+<div class="flex flex-col h-full bg-gray-900 text-white w-72 shadow-xl">
+  <!-- User Profile Section -->
+  <div class="p-6 border-b border-gray-800">
+    <div class="flex items-center space-x-4">
+      <div class="relative">
+        <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-lg font-semibold">
+          {{userName.charAt(0) || 'U'}}
+        </div>
+        <div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-gray-900 rounded-full"></div>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-gray-100">{{ userName || 'User' }}</p>
+        <p class="text-xs text-gray-400">{{ currentRole | titlecase }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 pt-4 pb-4 overflow-y-auto">
+    <!-- Admin Navigation -->
+    <div class="px-4 space-y-4" *ngIf="currentRole === 'cmas_admin'">
+      <div *ngFor="let section of adminSections">
+        <h3 class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          {{section.title}}
+        </h3>
+        <div class="space-y-1">
+          <a *ngFor="let item of section.items"
+             [routerLink]="[item.route]"
+             routerLinkActive="bg-blue-600 text-white"
+             [routerLinkActiveOptions]="{exact: true}"
+             class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200 group">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconPath(item.icon)"></path>
+            </svg>
+            <span class="flex-1">{{ item.title }}</span>
+            <span *ngIf="item.badge" 
+                  class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {{item.badge}}
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Other Roles Navigation -->
+    <div class="px-4 space-y-4" *ngIf="currentRole !== 'cmas_admin'">
+      <div *ngFor="let section of getRoleBasedSections()">
+        <h3 class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          {{section.title}}
+        </h3>
+        <div class="space-y-1">
+          <a *ngFor="let item of section.items"
+             [routerLink]="[item.route]"
+             routerLinkActive="bg-blue-600 text-white"
+             [routerLinkActiveOptions]="{exact: true}"
+             class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors duration-200 group">
+            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconPath(item.icon)"></path>
+            </svg>
+            <span class="flex-1">{{ item.title }}</span>
+            <span *ngIf="item.badge" 
+                  class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {{item.badge}}
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Footer Actions -->
+  <div class="p-4 border-t border-gray-800">
+    <button (click)="logout()" 
+            class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+      </svg>
+      Logout
+    </button>
+  </div>
+</div> 

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AdminDashboardComponent } from './components/admin/dashboard/dashboard.component';
-import { LoginComponent } from './components/login/login.component';
+import { LoginComponent } from '../../components/landing-page/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminLayoutComponent } from './components/admin/layout/admin-layout.component';
 import { UserLayoutComponent } from './components/user/layout/user-layout.component';
@@ -13,6 +13,8 @@ import { UserRequestsComponent } from './components/user/requests/user-requests.
 import { UserNotificationsComponent } from './components/user/notifications/user-notifications.component';
 import { UserProfileComponent } from './components/user/profile/user-profile.component';
 import { SidebarComponent } from './components/shared/sidebar/sidebar.component';
+import { SharedModule } from '../../shared/shared.module';
+import { BondManagementComponent } from './components/admin/bond-management/bond-management.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -21,7 +23,7 @@ const routes: Routes = [
     path: 'admin',
     component: AdminLayoutComponent,
     canActivate: [AuthGuard],
-    data: { roles: ['admin'] },
+    data: { roles: ['fbus_admin'] },
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: AdminDashboardComponent },
@@ -31,7 +33,7 @@ const routes: Routes = [
       },
       { 
         path: 'bonds', 
-        loadComponent: () => import('./components/admin/bonds/admin-bonds.component').then(m => m.AdminBondsComponent)
+        loadComponent: () => import('./components/admin/bond-management/bond-management.component').then(m => m.BondManagementComponent)
       },
       { 
         path: 'units', 
@@ -47,7 +49,7 @@ const routes: Routes = [
     path: 'user',
     component: UserLayoutComponent,
     canActivate: [AuthGuard],
-    data: { roles: ['user'] },
+    data: { roles: ['fbus_user'] },
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: UserDashboardComponent },
@@ -60,26 +62,23 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [
-    LoginComponent
-  ],
+  declarations: [],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes),
     FormsModule,
-    ReactiveFormsModule,
+    SharedModule,
+    BondManagementComponent,
+    AdminDashboardComponent,
+    LoginComponent,
     AdminLayoutComponent,
     UserLayoutComponent,
     UserDashboardComponent,
     SidebarComponent,
-    AdminDashboardComponent,
     UserBondsComponent,
     UserRequestsComponent,
     UserNotificationsComponent,
-    UserProfileComponent
-  ],
-  exports: [
-    RouterModule
+    UserProfileComponent,
+    RouterModule.forChild(routes)
   ]
 })
 export class FidelityBondModule { }
