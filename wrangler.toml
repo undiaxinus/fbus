@@ -1,0 +1,14 @@
+[build]
+command = "npm run build"
+pages_build_output_dir = "dist/fbus/browser"
+
+[site]
+bucket = "./dist/fbus/browser"
+
+[env.production]
+name = "fbus-website"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200 
