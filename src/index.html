@@ -4,10 +4,226 @@
   <meta charset="utf-8">
   <title>Fbus</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Cross-browser and device compatibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Fbus - Financial Bus Management System">
+  
+  <!-- PWA support -->
+  <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/x-icon" href="assets/finance.ico">
+  <link rel="apple-touch-icon" href="assets/finance.ico">
+  
+  <!-- Cross-browser polyfills and fixes -->
+  <script>
+    // iOS Safari viewport fix
+    (function(doc) {
+      var addEvent = 'addEventListener',
+          type = 'gesturestart',
+          qsa = 'querySelectorAll',
+          scales = [1, 1],
+          meta = qsa in doc ? doc[qsa]('meta[name=viewport]') : [];
+
+      function fix() {
+        meta.content = 'width=device-width,minimum-scale=' + scales[0] + ',maximum-scale=' + scales[1];
+        doc.removeEventListener(type, fix, true);
+      }
+
+      if ((meta = meta[meta.length - 1]) && addEvent in doc) {
+        fix();
+        scales = [0.25, 1.6];
+        doc[addEvent](type, fix, true);
+      }
+    }(document));
+
+    // Ensure requestAnimationFrame compatibility
+    window.requestAnimFrame = (function(){
+      return window.requestAnimationFrame ||
+             window.webkitRequestAnimationFrame ||
+             window.mozRequestAnimationFrame ||
+             function(callback){
+               window.setTimeout(callback, 1000 / 60);
+             };
+    })();
+  </script>
+
+  <style>
+    /* Cross-browser baseline styles */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      touch-action: manipulation;
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      overflow: hidden;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      position: fixed;
+    }
+
+    /* Ensure proper rendering on all browsers */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: rgba(0,0,0,0);
+    }
+
+    /* Fix for iOS momentum scrolling */
+    .ios-momentum-scrolling {
+      -webkit-overflow-scrolling: touch;
+      overflow-y: scroll;
+    }
+
+    /* App root styles */
+    app-root {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      background: #ffffff;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Loading indicator with fallback */
+    .app-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      z-index: 9999;
+    }
+
+    /* Fallback for browsers without CSS Grid */
+    @supports not (display: grid) {
+      .grid-fallback {
+        display: flex;
+        flex-wrap: wrap;
+      }
+    }
+
+    /* High-contrast mode improvements */
+    @media (forced-colors: active) {
+      * {
+        forced-color-adjust: none;
+      }
+    }
+
+    /* Reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="app-loading">
+    <div role="status" aria-label="Loading application">
+      Loading...
+      <noscript>
+        <p>JavaScript is required to run this application.</p>
+      </noscript>
+    </div>
+  </div>
   <app-root></app-root>
+  <script>
+    // Browser detection and class application
+    (function(w, d) {
+      // Add browser-specific classes
+      var ua = navigator.userAgent;
+      var html = d.documentElement;
+      if (/iPhone|iPad|iPod/.test(ua)) {
+        html.classList.add('ios');
+        // Prevent elastic scrolling
+        d.addEventListener('touchmove', function(e) {
+          if (!e.target.closest('.scrollable')) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
+      if (/Android/.test(ua)) html.classList.add('android');
+      if (/Edge/.test(ua)) html.classList.add('edge');
+      if (/Chrome/.test(ua)) html.classList.add('chrome');
+      if (/Firefox/.test(ua)) html.classList.add('firefox');
+      if (/Safari/.test(ua) && !/Chrome/.test(ua)) html.classList.add('safari');
+      if (/IEMobile/.test(ua)) html.classList.add('ie-mobile');
+      
+      // Add touch support detection
+      if ('ontouchstart' in w || navigator.maxTouchPoints > 0) {
+        html.classList.add('touch-device');
+      }
+
+      // Initialize app when ready
+      d.addEventListener('DOMContentLoaded', function() {
+        var loadingEl = d.querySelector('.app-loading');
+        var appRoot = d.querySelector('app-root');
+        
+        // Fix for iOS initial render
+        if (html.classList.contains('ios')) {
+          w.scrollTo(0, 0);
+          d.body.style.opacity = '0';
+          setTimeout(function() {
+            d.body.style.opacity = '1';
+          }, 50);
+        }
+
+        if (appRoot) {
+          var observer = new MutationObserver(function(mutations) {
+            if (appRoot.children.length > 0 && loadingEl) {
+              loadingEl.style.opacity = '0';
+              setTimeout(function() {
+                loadingEl.style.display = 'none';
+              }, 300);
+              observer.disconnect();
+            }
+          });
+          
+          observer.observe(appRoot, {
+            childList: true,
+            subtree: true
+          });
+        }
+      });
+
+      // Prevent scroll bounce in iOS
+      w.addEventListener('load', function() {
+        if (html.classList.contains('ios')) {
+          var preventBounce = function(e) {
+            e.preventDefault();
+          };
+          d.body.addEventListener('touchmove', preventBounce, { passive: false });
+        }
+      });
+    })(window, document);
+  </script>
 </body>
 </html>
