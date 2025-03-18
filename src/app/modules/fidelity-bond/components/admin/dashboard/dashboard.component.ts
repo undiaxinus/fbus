@@ -4,6 +4,8 @@ import { RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../../../core/services/supabase.service';
 import { inject } from '@angular/core';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
+import { FormsModule } from '@angular/forms';
+import { SharedModule } from '../../../../../shared/shared.module';
 
 interface Bond {
   id: number;
@@ -38,7 +40,7 @@ interface DepartmentStats {
   selector: 'app-admin-dashboard',
   templateUrl: './dashboard.component.html',
   standalone: true,
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule, FormsModule, SharedModule]
 })
 export class AdminDashboardComponent implements OnInit, AfterViewInit {
   private supabase = inject(SupabaseService);

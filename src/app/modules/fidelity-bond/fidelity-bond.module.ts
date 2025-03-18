@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Routes } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AdminDashboardComponent } from './components/admin/dashboard/dashboard.component';
 import { LoginComponent } from '../../components/landing-page/login/login.component';
@@ -15,57 +14,16 @@ import { UserProfileComponent } from './components/user/profile/user-profile.com
 import { SidebarComponent } from './components/shared/sidebar/sidebar.component';
 import { SharedModule } from '../../shared/shared.module';
 import { BondManagementComponent } from './components/admin/bond-management/bond-management.component';
-
-const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
-  {
-    path: 'admin',
-    component: AdminLayoutComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['fbus_admin'] },
-    children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: AdminDashboardComponent },
-      { 
-        path: 'users', 
-        loadComponent: () => import('./components/admin/users/admin-users.component').then(m => m.AdminUsersComponent)
-      },
-      { 
-        path: 'bonds', 
-        loadComponent: () => import('./components/admin/bond-management/bond-management.component').then(m => m.BondManagementComponent)
-      },
-      { 
-        path: 'units', 
-        loadComponent: () => import('./components/admin/units/admin-units.component').then(m => m.AdminUnitsComponent)
-      },
-      { 
-        path: 'notifications', 
-        loadComponent: () => import('./components/admin/notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent)
-      }
-    ]
-  },
-  {
-    path: 'user',
-    component: UserLayoutComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['fbus_user'] },
-    children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: UserDashboardComponent },
-      { path: 'bonds', component: UserBondsComponent },
-      { path: 'requests', component: UserRequestsComponent },
-      { path: 'notifications', component: UserNotificationsComponent },
-      { path: 'profile', component: UserProfileComponent }
-    ]
-  }
-];
+import { FidelityBondRoutingModule } from './fidelity-bond-routing.module';
+import { BondLookupComponent } from './components/bond-lookup/bond-lookup.component';
+import { BondDetailsComponent } from './components/bond-details/bond-details.component';
 
 @NgModule({
   declarations: [],
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     SharedModule,
     BondManagementComponent,
     AdminDashboardComponent,
@@ -78,7 +36,9 @@ const routes: Routes = [
     UserRequestsComponent,
     UserNotificationsComponent,
     UserProfileComponent,
-    RouterModule.forChild(routes)
+    BondLookupComponent,
+    BondDetailsComponent,
+    FidelityBondRoutingModule
   ]
 })
 export class FidelityBondModule { }

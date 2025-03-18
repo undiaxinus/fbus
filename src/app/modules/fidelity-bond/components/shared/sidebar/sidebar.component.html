@@ -1,9 +1,11 @@
-<div class="flex flex-col h-screen bg-white border-r border-gray-200">
+<div class="flex flex-col h-screen bg-[#1e1e2d] shadow-xl">
   <!-- Logo Section -->
-  <div class="p-4">
-    <div class="flex items-center space-x-4">
-      <img src="assets/logo.png" alt="Logo" class="h-8 w-8">
-      <span class="text-xl font-semibold text-gray-800">Fidelity Bond</span>
+  <div class="py-6 px-5">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-white/10 rounded-lg">
+        <img src="assets/logo.png" alt="Logo" class="h-8 w-8">
+      </div>
+      <span class="text-xl font-bold text-white tracking-wide">Fidelity Bond</span>
     </div>
   </div>
 
@@ -23,31 +25,63 @@
   </div>
 
   <!-- Navigation Menu -->
-  <nav class="flex-1 overflow-y-auto py-4">
-    <ul class="space-y-1">
+  <nav class="flex-1 px-4 py-6">
+    <!-- Menu Section -->
+    <div class="mb-4 px-2">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Menu</h2>
+    </div>
+    
+    <ul class="space-y-1.5">
       <li *ngFor="let item of menuItems">
         <a [routerLink]="item.route"
-           routerLinkActive="text-blue-600 bg-blue-50"
+           routerLinkActive="bg-[#2a2a3c] text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-8 before:w-1 before:bg-blue-500 before:rounded-r"
            [routerLinkActiveOptions]="{exact: item.route.endsWith('dashboard')}"
-           class="flex items-center px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-          <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.icon"/>
-          </svg>
-          {{ item.title }}
+           class="flex items-center px-3 py-2.5 text-gray-400 hover:text-white rounded-lg relative overflow-hidden hover:bg-[#2a2a3c] transition-all duration-300 group">
+          <div class="flex items-center w-full relative z-10">
+            <div class="p-2 rounded-lg bg-[#1e1e2d] group-hover:bg-white/5 transition-colors duration-300">
+              <svg class="h-[22px] w-[22px] transform group-hover:scale-110 transition-all duration-300" 
+                   fill="none" 
+                   stroke="currentColor" 
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="1.75" 
+                      [attr.d]="item.icon"/>
+              </svg>
+            </div>
+            <span class="ml-3 font-medium tracking-wide text-sm group-hover:translate-x-1 transition-transform duration-300">
+              {{ item.title }}
+            </span>
+          </div>
         </a>
       </li>
     </ul>
   </nav>
 
-  <!-- Footer Actions -->
-  <div class="p-4 border-t border-gray-200">
+  <!-- Footer Section -->
+  <div class="px-4 pb-6">
+    <div class="px-2 mb-3">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</h2>
+    </div>
+    <!-- Logout Button -->
     <button (click)="logout()" 
-            class="flex items-center w-full px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-      <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-      </svg>
-      Logout
+            class="w-full flex items-center px-3 py-2.5 text-gray-400 hover:text-white rounded-lg relative overflow-hidden hover:bg-[#2a2a3c] transition-all duration-300 group">
+      <div class="flex items-center w-full relative z-10">
+        <div class="p-2 rounded-lg bg-[#1e1e2d] group-hover:bg-red-500/10 transition-colors duration-300">
+          <svg class="h-[22px] w-[22px] transform group-hover:scale-110 transition-all duration-300" 
+               fill="none" 
+               stroke="currentColor" 
+               viewBox="0 0 24 24">
+            <path stroke-linecap="round" 
+                  stroke-linejoin="round" 
+                  stroke-width="1.75" 
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+        <span class="ml-3 font-medium tracking-wide text-sm group-hover:translate-x-1 transition-transform duration-300">
+          Logout
+        </span>
+      </div>
     </button>
   </div>
 </div> 
