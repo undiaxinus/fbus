@@ -5,7 +5,7 @@ import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface BondLookupRequest {
-  contact_no: string;
+  risk_no: string;
   first_name: string;
   last_name: string;
 }
@@ -54,9 +54,24 @@ export class BondService {
       this.supabase
         .from('fbus_list')
         .select('*')
-        .eq('contact_no', request.contact_no)
+        .eq('risk_no', request.risk_no)
         .eq('first_name', request.first_name)
         .eq('last_name', request.last_name)
+        .single()
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return data as BondDetails;
+      })
+    );
+  }
+
+  getBondById(id: string): Observable<BondDetails | null> {
+    return from(
+      this.supabase
+        .from('fbus_list')
+        .select('*')
+        .eq('id', id)
         .single()
     ).pipe(
       map(({ data, error }) => {

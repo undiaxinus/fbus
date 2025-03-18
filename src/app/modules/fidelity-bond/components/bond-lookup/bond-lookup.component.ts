@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { BondService } from '../../services/bond.service';
+import { BondService, BondLookupRequest } from '../../services/bond.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -23,9 +23,9 @@ export class BondLookupComponent implements OnInit {
     private router: Router
   ) {
     this.lookupForm = this.fb.group({
-      contact_no: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]],
-      first_name: ['', [Validators.required, Validators.minLength(2)]],
-      last_name: ['', [Validators.required, Validators.minLength(2)]]
+      risk_no: ['', Validators.required],
+      first_name: ['', Validators.required],
+      last_name: ['', Validators.required]
     });
   }
 
@@ -39,23 +39,25 @@ export class BondLookupComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-      this.bondService.lookupBond(this.lookupForm.value).subscribe({
-        next: (bondDetails) => {
+      const request: BondLookupRequest = {
+        risk_no: this.lookupForm.get('risk_no')?.value,
+        first_name: this.lookupForm.get('first_name')?.value,
+        last_name: this.lookupForm.get('last_name')?.value
+      };
+
+      this.bondService.lookupBond(request).subscribe({
+        next: (result) => {
           this.loading = false;
-          if (bondDetails) {
-            // Navigate to bond details view with the data
-            this.router.navigate(['/fidelity-bond/bond-details'], { 
-              state: { bondDetails },
-              replaceUrl: true // This prevents going back to the form with browser back button
-            });
+          if (result) {
+            this.router.navigate(['/fidelity-bond/bond-details', result.id]);
           } else {
-            this.error = 'No bond found with the provided details. Please verify your information and try again.';
+            this.error = 'No bond found with the provided details';
           }
         },
-        error: (err) => {
+        error: (error) => {
           this.loading = false;
-          console.error('Bond lookup error:', err);
-          this.error = 'An error occurred while looking up the bond. Please try again later.';
+          this.error = 'An error occurred while looking up the bond';
+          console.error('Bond lookup error:', error);
         }
       });
     } else {

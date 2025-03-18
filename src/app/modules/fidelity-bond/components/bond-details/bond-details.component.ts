@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { BondDetails, BondService } from '../../services/bond.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BondService } from '../../services/bond.service';
 import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate, state } from '@angular/animations';
 
@@ -30,29 +30,40 @@ import { trigger, transition, style, animate, state } from '@angular/animations'
   ]
 })
 export class BondDetailsComponent implements OnInit {
-  bondDetails: BondDetails | null = null;
+  bondDetails: any = null;
   loading = false;
   error: string | null = null;
   pageLoading = true;
 
   constructor(
+    private route: ActivatedRoute,
     private router: Router,
     private bondService: BondService
-  ) {
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras.state) {
-      this.bondDetails = navigation.extras.state['bondDetails'];
-    }
-  }
+  ) {}
 
   ngOnInit(): void {
-    if (!this.bondDetails) {
-      this.error = 'No bond details available';
-    }
-    // Simulate page loading for smoother transitions
-    setTimeout(() => {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.error = 'No bond ID provided';
       this.pageLoading = false;
-    }, 300);
+      return;
+    }
+
+    // Load bond details using the ID
+    this.loading = true;
+    this.bondService.getBondById(id).subscribe({
+      next: (details) => {
+        this.bondDetails = details;
+        this.loading = false;
+        this.pageLoading = false;
+      },
+      error: (error) => {
+        this.error = 'Failed to load bond details';
+        this.loading = false;
+        this.pageLoading = false;
+        console.error('Error loading bond details:', error);
+      }
+    });
   }
 
   backToSearch(): void {
@@ -70,7 +81,7 @@ export class BondDetailsComponent implements OnInit {
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `bond-details-${this.bondDetails.risk_no}.pdf`;
+      link.download = `bond-${this.bondDetails.risk_no}.pdf`;
       link.click();
       
       window.URL.revokeObjectURL(url);

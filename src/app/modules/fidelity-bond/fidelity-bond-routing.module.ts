@@ -59,7 +59,7 @@ const routes: Routes = [
     component: BondLookupComponent
   },
   {
-    path: 'bond-details',
+    path: 'bond-details/:id',
     component: BondDetailsComponent
   }
 ];
