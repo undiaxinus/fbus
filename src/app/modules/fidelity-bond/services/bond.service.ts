@@ -12,13 +12,31 @@ export interface BondLookupRequest {
 
 export interface BondDetails {
   id: string;
+  rank: string;
   first_name: string;
   last_name: string;
-  contact_no: string;
+  middle_name: string;
   designation: string;
-  days_remaining: number;
+  despic: string;
+  unit_office: string;
+  mca: string;
+  amount_of_bond: string;
+  bond_premium: string;
+  risk_no: string;
+  riskpic: string;
+  effective_date: string;
+  date_of_cancellation: string;
+  status: string;
+  days_remaning: string;
+  contact_no: string;
   units: string;
   profile: string;
+  remark: string;
+  dates: string;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+  is_archived: boolean;
 }
 
 @Injectable({
@@ -50,7 +68,6 @@ export class BondService {
 
   async generatePDF(bondDetails: BondDetails): Promise<Blob> {
     // Implement PDF generation logic here
-    // You might want to use a library like pdfmake or jspdf
-    throw new Error('PDF generation not implemented yet');
+    return new Blob(); // Placeholder
   }
 }

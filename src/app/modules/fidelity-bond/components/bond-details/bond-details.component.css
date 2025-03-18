@@ -1,0 +1,81 @@
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  body {
+    padding: 2cm;
+  }
+
+  /* Ensure text is black for better printing */
+  * {
+    color: #000 !important;
+    text-shadow: none !important;
+    background: transparent !important;
+  }
+
+  /* Remove shadows and borders for cleaner print */
+  .shadow-sm,
+  .shadow-lg,
+  .shadow {
+    box-shadow: none !important;
+  }
+
+  .border,
+  .border-t,
+  .border-b {
+    border-color: #000 !important;
+    border-width: 1px !important;
+  }
+
+  /* Adjust font sizes for print */
+  h1 {
+    font-size: 24pt !important;
+  }
+
+  h2, h3 {
+    font-size: 16pt !important;
+  }
+
+  p, label {
+    font-size: 12pt !important;
+  }
+}
+
+/* Hover Effects */
+.hover-scale {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  border-top-color: #4f46e5;
+  border-right-color: #4f46e5;
+  border-bottom-color: #4f46e5;
+  border-left-color: transparent;
+}

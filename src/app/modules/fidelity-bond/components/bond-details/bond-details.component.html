@@ -1,7 +1,32 @@
-<div class="max-w-3xl mx-auto p-6">
-  <!-- Error State -->
-  <div *ngIf="error" class="text-center py-12">
-    <div class="rounded-md bg-red-50 p-4 max-w-md mx-auto">
+<!-- Loading State -->
+<div *ngIf="pageLoading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+  <div class="flex flex-col items-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    <p class="mt-4 text-gray-600">Loading bond details...</p>
+  </div>
+</div>
+
+<div class="min-h-screen bg-white py-8" *ngIf="!pageLoading" [@fadeSlide]>
+  <div class="max-w-3xl mx-auto px-4">
+    <!-- Header -->
+    <div class="flex justify-between items-start mb-6">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">Bond Details</h1>
+        <p class="text-sm text-gray-500 mt-1">ID: {{bondDetails?.id}}</p>
+      </div>
+      <button 
+        (click)="backToSearch()" 
+        class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm rounded-md text-gray-700 bg-white hover:bg-gray-50"
+      >
+        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Search
+      </button>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="mb-6 rounded-md bg-red-50 p-4">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -9,89 +34,139 @@
           </svg>
         </div>
         <div class="ml-3">
-          <p class="text-sm text-red-700">{{ error }}</p>
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
         </div>
       </div>
     </div>
-    <button 
-      (click)="backToSearch()" 
-      class="mt-4 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 flex items-center gap-2 mx-auto"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Back to Search
-    </button>
-  </div>
 
-  <!-- Bond Details Content -->
-  <ng-container *ngIf="bondDetails && !error">
-    <!-- Header Section -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">Bond Details</h2>
-      <button 
-        (click)="backToSearch()" 
-        class="text-indigo-600 hover:text-indigo-800 transition-colors duration-200 flex items-center gap-2"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to Search
-      </button>
-    </div>
+    <!-- Bond Content -->
+    <div *ngIf="bondDetails && !error" class="space-y-6">
+      <!-- Status Banner -->
+      <div [class]="'rounded-md p-4 ' + 
+        (getStatusColor() === 'green' ? 'bg-green-50' :
+         getStatusColor() === 'yellow' ? 'bg-yellow-50' :
+         getStatusColor() === 'red' ? 'bg-red-50' : 'bg-gray-50')">
+        <div class="flex items-center">
+          <div [class]="'h-3 w-3 rounded-full mr-2 ' +
+            (getStatusColor() === 'green' ? 'bg-green-400' :
+             getStatusColor() === 'yellow' ? 'bg-yellow-400' :
+             getStatusColor() === 'red' ? 'bg-red-400' : 'bg-gray-400')"></div>
+          <p [class]="'text-sm font-medium ' +
+            (getStatusColor() === 'green' ? 'text-green-800' :
+             getStatusColor() === 'yellow' ? 'text-yellow-800' :
+             getStatusColor() === 'red' ? 'text-red-800' : 'text-gray-800')">
+            {{bondDetails.status}}
+          </p>
+        </div>
+      </div>
 
-    <!-- Main Content -->
-    <div class="bg-white rounded-lg shadow-lg p-6">
       <!-- Personal Information -->
-      <div class="mb-8">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800">Personal Information</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 bg-gray-50 rounded-md">
-            <label class="text-sm text-gray-600 block mb-1">Name</label>
-            <p class="text-gray-900 font-medium">{{bondDetails.first_name}} {{bondDetails.last_name}}</p>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-md">
-            <label class="text-sm text-gray-600 block mb-1">Contact Number</label>
-            <p class="text-gray-900 font-medium">{{bondDetails.contact_no}}</p>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-md">
-            <label class="text-sm text-gray-600 block mb-1">Designation</label>
-            <p class="text-gray-900 font-medium">{{bondDetails.designation}}</p>
-          </div>
+      <div class="bg-white border border-gray-200 rounded-md overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Personal Information</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">FULL NAME</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.rank}} {{bondDetails.first_name}} {{bondDetails.middle_name}} {{bondDetails.last_name}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">CONTACT NUMBER</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.contact_no}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">DESIGNATION</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.designation}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">UNIT/OFFICE</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.unit_office}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">MCA</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.mca}}</dd>
+            </div>
+          </dl>
         </div>
       </div>
 
-      <!-- Bond Status -->
-      <div class="mb-8">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800">Bond Status</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 bg-gray-50 rounded-md">
-            <label class="text-sm text-gray-600 block mb-1">Days Remaining</label>
-            <p class="text-gray-900 font-medium">{{bondDetails.days_remaining}}</p>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-md">
-            <label class="text-sm text-gray-600 block mb-1">Units</label>
-            <p class="text-gray-900 font-medium">{{bondDetails.units}}</p>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-md">
-            <label class="text-sm text-gray-600 block mb-1">Status</label>
-            <p [ngClass]="{
-              'text-green-600': bondDetails.days_remaining > 0,
-              'text-red-600': bondDetails.days_remaining <= 0
-            }" class="font-medium">
-              {{bondDetails.days_remaining > 0 ? 'Active' : 'Expired'}}
-            </p>
-          </div>
+      <!-- Bond Information -->
+      <div class="bg-white border border-gray-200 rounded-md overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Bond Information</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">UNITS</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.units}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">DAYS REMAINING</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.days_remaning}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">STATUS</dt>
+              <dd [class]="'mt-1 text-sm font-medium ' + 
+                (getStatusColor() === 'green' ? 'text-green-600' :
+                 getStatusColor() === 'yellow' ? 'text-yellow-600' :
+                 getStatusColor() === 'red' ? 'text-red-600' : 'text-gray-600')">
+                {{bondDetails.status}}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">AMOUNT OF BOND</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.amount_of_bond}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">BOND PREMIUM</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.bond_premium}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">RISK NUMBER</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.risk_no}}</dd>
+            </div>
+          </dl>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex justify-end space-x-4 mt-6">
+      <!-- Dates -->
+      <div class="bg-white border border-gray-200 rounded-md overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Important Dates</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">EFFECTIVE DATE</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.effective_date | date:'mediumDate'}}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">CANCELLATION DATE</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{bondDetails.date_of_cancellation | date:'mediumDate'}}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Remarks -->
+      <div *ngIf="bondDetails.remark" class="bg-white border border-gray-200 rounded-md overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50">
+          <h3 class="text-lg font-medium text-gray-900">Remarks</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <p class="text-sm text-gray-900">{{bondDetails.remark}}</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end space-x-4 mt-8">
         <button 
           (click)="printDetails()" 
-          class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
           Print Details
@@ -99,18 +174,18 @@
         <button 
           (click)="downloadPDF()" 
           [disabled]="loading"
-          class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
-          <svg *ngIf="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg *ngIf="loading" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <svg *ngIf="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg *ngIf="!loading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           {{ loading ? 'Generating PDF...' : 'Download PDF' }}
         </button>
       </div>
     </div>
-  </ng-container>
+  </div>
 </div>
