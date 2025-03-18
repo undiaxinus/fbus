@@ -56,7 +56,7 @@ export class BondDetailsComponent implements OnInit {
   }
 
   backToSearch(): void {
-    this.router.navigate(['/bond-lookup']);
+    this.router.navigate(['/fidelity-bond/bond-lookup']);
   }
 
   async downloadPDF(): Promise<void> {
