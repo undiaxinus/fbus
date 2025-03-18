@@ -17,6 +17,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { SafePipe } from '../../../../../shared/pipes/safe.pipe';
 import { ClickOutsideDirective } from '../../../../../shared/directives/click-outside.directive';
 import { BondHistory } from '../../../models/bond-history.model';
+import { DatePipe } from '@angular/common';
 
 interface FbusBond {
   id?: string;
@@ -59,7 +60,8 @@ interface FbusSignatory {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    DatePipe
   ],
   templateUrl: './bond-management.component.html',
   styles: [`
@@ -871,9 +873,15 @@ export class BondManagementComponent implements OnInit {
   async onViewBond(bond: FbusBond) {
     this.selectedBond = bond;
     this.showViewBondModal = true;
+    this.activeTab = 'details';
+    
+    // Load documents when opening modal
     if (bond.id) {
       await this.loadDocuments(bond.id);
     }
+
+    // Load history immediately when modal opens
+    await this.loadBondHistory();
   }
 
   calculateDaysRemaining(bond: FbusBond): string {
@@ -1741,9 +1749,9 @@ export class BondManagementComponent implements OnInit {
         unit_office: bond.unit_office,
         rank: bond.rank,
         designation: bond.designation,
-        mca: parseFloat(bond.mca) || 0,
-        amount_of_bond: parseFloat(bond.amount_of_bond) || 0,
-        bond_premium: parseFloat(bond.bond_premium) || 0,
+        mca: (typeof bond.mca === 'number' ? bond.mca : parseFloat(bond.mca) || 0).toString(),
+        amount_of_bond: (typeof bond.amount_of_bond === 'number' ? bond.amount_of_bond : parseFloat(bond.amount_of_bond) || 0).toString(),
+        bond_premium: (typeof bond.bond_premium === 'number' ? bond.bond_premium : parseFloat(bond.bond_premium) || 0).toString(),
         risk_no: bond.risk_no,
         effective_date: bond.effective_date,
         date_of_cancellation: bond.date_of_cancellation,
@@ -2168,18 +2176,43 @@ export class BondManagementComponent implements OnInit {
     if (!this.selectedBond?.id) return;
 
     try {
+      this.isLoading = true;
+      console.log('Fetching history for bond ID:', this.selectedBond.id);
+      
       const { data: history, error } = await this.supabase.getClient()
         .from('fbus_history')
-        .select('*')
+        .select(`
+          *,
+          bond:bond_id (
+            id,
+            first_name,
+            last_name,
+            unit_office,
+            risk_no
+          )
+        `)
         .eq('bond_id', this.selectedBond.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching history:', error);
+        throw error;
+      }
+
+      console.log('Fetched history records:', history);
       this.bondHistory = history || [];
     } catch (error) {
       console.error('Error loading bond history:', error);
       this.error = 'Failed to load bond history';
+    } finally {
+      this.isLoading = false;
     }
+  }
+
+  // Add method to handle row click
+  onHistoryRowClick(record: BondHistory) {
+    console.log('History record details:', record);
+    // You can add additional logic here to show more details
   }
 
   getHistoryBadgeColor(changeType: string): string {
@@ -2225,5 +2258,13 @@ export class BondManagementComponent implements OnInit {
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (value instanceof Date) return new Date(value).toLocaleDateString();
     return value.toString();
+  }
+
+  // Add method to handle tab changes
+  async onTabChange(tab: 'details' | 'documents' | 'history') {
+    this.activeTab = tab;
+    if (tab === 'history') {
+      await this.loadBondHistory();
+    }
   }
 }

@@ -7,9 +7,9 @@ export interface BondHistory {
   unit_office: string;
   rank: string;
   designation: string;
-  mca: number;
-  amount_of_bond: number;
-  bond_premium: number;
+  mca: string;
+  amount_of_bond: string;
+  bond_premium: string;
   risk_no: string;
   effective_date: string;
   date_of_cancellation: string;
@@ -19,4 +19,5 @@ export interface BondHistory {
   old_values?: Record<string, any>;
   new_values?: Record<string, any>;
   created_at: string;
+  created_by?: string;
 } 

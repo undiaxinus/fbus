@@ -1110,18 +1110,18 @@
       <!-- Tabs -->
       <div class="border-b border-gray-200">
         <nav class="flex -mb-px" aria-label="Tabs">
-          <button (click)="activeTab = 'details'"
-            [class]="'w-1/3 py-4 px-1 text-center border-b-2 font-medium text-sm ' + 
+          <button (click)="onTabChange('details')"
+            [class]="'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ' + 
             (activeTab === 'details' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             Bond Details
           </button>
-          <button (click)="activeTab = 'documents'"
+          <!-- <button (click)="onTabChange('documents')"
             [class]="'w-1/3 py-4 px-1 text-center border-b-2 font-medium text-sm ' + 
             (activeTab === 'documents' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             Documents
-          </button>
-          <button (click)="activeTab = 'history'; loadBondHistory()"
-            [class]="'w-1/3 py-4 px-1 text-center border-b-2 font-medium text-sm ' + 
+          </button> -->
+          <button (click)="onTabChange('history')"
+            [class]="'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ' + 
             (activeTab === 'history' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             History
           </button>
@@ -1130,51 +1130,52 @@
 
       <!-- Content -->
       <div class="p-6">
-        <!-- Details Tab Content -->
-        <div *ngIf="activeTab === 'details'">
-          <!-- Existing details content -->
-          <div class="grid grid-cols-2 gap-6">
-            <!-- Personal Information -->
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <h4 class="text-sm font-medium text-gray-900 mb-4">Personal Information</h4>
-              <div class="space-y-3">
+        <!-- Bond Details Tab Content -->
+        <div *ngIf="activeTab === 'details'" class="space-y-6">
+          <!-- Personal Information -->
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="px-4 py-5 sm:p-6">
+              <h3 class="text-lg font-medium text-gray-900">Personal Information</h3>
+              <div class="mt-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs text-gray-500">Full Name</label>
-                  <p class="mt-1 text-sm text-gray-900">{{selectedBond.rank}} {{selectedBond.first_name}} {{selectedBond.middle_name}} {{selectedBond.last_name}}</p>
+                  <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                  <p class="mt-1 text-sm text-gray-900">{{selectedBond.first_name}} {{selectedBond.middle_name}} {{selectedBond.last_name}}</p>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">Contact Number</label>
+                  <label class="block text-sm font-medium text-gray-700">Contact Number</label>
                   <p class="mt-1 text-sm text-gray-900">{{selectedBond.contact_no || 'N/A'}}</p>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">Unit/Office</label>
+                  <label class="block text-sm font-medium text-gray-700">Unit/Office</label>
                   <p class="mt-1 text-sm text-gray-900">{{selectedBond.unit_office}}</p>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">Designation</label>
+                  <label class="block text-sm font-medium text-gray-700">Designation</label>
                   <p class="mt-1 text-sm text-gray-900">{{selectedBond.designation}}</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Bond Information -->
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <h4 class="text-sm font-medium text-gray-900 mb-4">Bond Information</h4>
-              <div class="space-y-3">
+          <!-- Bond Information -->
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="px-4 py-5 sm:p-6">
+              <h3 class="text-lg font-medium text-gray-900">Bond Information</h3>
+              <div class="mt-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs text-gray-500">Risk Number</label>
+                  <label class="block text-sm font-medium text-gray-700">Risk Number</label>
                   <p class="mt-1 text-sm text-gray-900">{{selectedBond.risk_no}}</p>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">Bond Amount</label>
+                  <label class="block text-sm font-medium text-gray-700">Bond Amount</label>
                   <p class="mt-1 text-sm text-gray-900">{{formatCurrency(selectedBond.amount_of_bond)}}</p>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">Bond Premium</label>
+                  <label class="block text-sm font-medium text-gray-700">Bond Premium</label>
                   <p class="mt-1 text-sm text-gray-900">{{formatCurrency(selectedBond.bond_premium)}}</p>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">MCA</label>
+                  <label class="block text-sm font-medium text-gray-700">MCA</label>
                   <p class="mt-1 text-sm text-gray-900">{{formatCurrency(selectedBond.mca)}}</p>
                 </div>
               </div>
@@ -1182,23 +1183,24 @@
           </div>
 
           <!-- Status Information -->
-          <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 class="text-sm font-medium text-gray-900 mb-4">Status Information</h4>
-            <div class="grid grid-cols-3 gap-6">
-              <div>
-                <label class="block text-xs text-gray-500">Status</label>
-                <span [class]="'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium mt-1 ' + getStatusColor(selectedBond)">
-                  <span class="w-1 h-1 rounded-full mr-1" [class]="getStatusColor(selectedBond).includes('green') ? 'bg-green-400' : getStatusColor(selectedBond).includes('yellow') ? 'bg-yellow-400' : 'bg-red-400'"></span>
-                  {{calculateBondStatus(selectedBond)}}
-                </span>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-500">Effective Date</label>
-                <p class="mt-1 text-sm text-gray-900">{{selectedBond.effective_date | date:'mediumDate'}}</p>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-500">Expiry Date</label>
-                <p class="mt-1 text-sm text-gray-900">{{selectedBond.date_of_cancellation | date:'mediumDate'}}</p>
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="px-4 py-5 sm:p-6">
+              <h3 class="text-lg font-medium text-gray-900">Status Information</h3>
+              <div class="mt-4 grid grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Status</label>
+                  <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ' + getStatusColor(selectedBond)">
+                    {{calculateBondStatus(selectedBond)}}
+                  </span>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Effective Date</label>
+                  <p class="mt-1 text-sm text-gray-900">{{selectedBond.effective_date | date:'mediumDate'}}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Expiry Date</label>
+                  <p class="mt-1 text-sm text-gray-900">{{selectedBond.date_of_cancellation | date:'mediumDate'}}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -1281,6 +1283,71 @@
             <h4 class="text-sm font-medium text-gray-900 mb-2">Remarks</h4>
             <p class="text-sm text-gray-600">{{selectedBond.remark}}</p>
           </div>
+
+        </div>
+
+        <!-- Documents Tab Content -->
+        <div *ngIf="activeTab === 'documents'" class="space-y-6">
+          <!-- Documents content here -->
+        </div>
+
+        <!-- History Tab Content -->
+        <div *ngIf="activeTab === 'history'" class="space-y-4">
+          <!-- Loading State -->
+          <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+
+          <!-- No History -->
+          <div *ngIf="!isLoading && (!bondHistory || bondHistory.length === 0)" class="text-center py-8">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No history found</h3>
+            <p class="mt-1 text-sm text-gray-500">No changes have been made to this bond yet.</p>
+          </div>
+
+          <!-- History List -->
+          <ul *ngIf="!isLoading && bondHistory && bondHistory.length > 0" class="space-y-4">
+            <li *ngFor="let record of bondHistory" 
+                class="bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
+                (click)="onHistoryRowClick(record)">
+              <div class="p-4">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <p class="text-sm text-gray-500">
+                      <span [class]="
+                        record.change_type === 'CREATE' ? 'text-green-600 font-medium' :
+                        record.change_type === 'UPDATE' ? 'text-blue-600 font-medium' :
+                        record.change_type === 'DELETE' ? 'text-red-600 font-medium' :
+                        'text-purple-600 font-medium'
+                      ">{{record.change_type}}</span>
+                      <span class="font-medium text-gray-900"> by {{record.created_by || 'System'}}</span>
+                    </p>
+
+                    <!-- Changed Fields -->
+                    <div *ngIf="record.change_type === 'UPDATE' && record.changed_fields && record.changed_fields.length > 0" class="mt-2">
+                      <div *ngFor="let field of record.changed_fields" class="mt-1 text-sm">
+                        <span class="font-medium text-gray-900">{{formatFieldName(field)}}:</span>
+                        <span class="text-red-600 line-through mr-1">{{record.old_values?.[field] || 'N/A'}}</span>
+                        <span class="text-green-600">{{record.new_values?.[field] || 'N/A'}}</span>
+                      </div>
+                    </div>
+
+                    <!-- Additional Details -->
+                    <div class="mt-2 text-sm text-gray-600">
+                      <p>Risk No: {{record.risk_no}}</p>
+                      <p>Unit/Office: {{record.unit_office}}</p>
+                      <p>Effective Date: {{record.effective_date | date:'mediumDate'}}</p>
+                    </div>
+                  </div>
+                  <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                    <time [dateTime]="record.created_at">{{record.created_at | date:'medium'}}</time>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -1297,10 +1364,10 @@
               </svg>
               Edit Bond
             </button>
-          </div>
-        </div>
       </div>
     </div>
+  </div>
+</div>
 
 <!-- Full Size Image Modal -->
 <div *ngIf="showFullSizeImage && selectedImageUrl" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
