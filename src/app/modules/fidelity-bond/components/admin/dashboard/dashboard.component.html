@@ -22,20 +22,20 @@
   <!-- Stats Overview -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     <!-- Charts Section -->
-    <div class="col-span-full lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="col-span-full grid grid-cols-2 gap-6">
       <!-- Distribution Chart -->
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div class="col-span-2 md:col-span-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Bond Distribution</h2>
-        <div class="relative h-64">
-          <canvas #distributionChart></canvas>
+        <div class="relative w-full h-[300px]">
+          <canvas #distributionChart class="w-full h-full"></canvas>
         </div>
       </div>
 
       <!-- Trend Chart -->
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div class="col-span-2 md:col-span-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h2>
-        <div class="relative h-64">
-          <canvas #trendChart></canvas>
+        <div class="relative w-full h-[300px]">
+          <canvas #trendChart class="w-full h-full"></canvas>
         </div>
       </div>
     </div>
