@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -16,6 +16,9 @@ interface MenuItem {
   templateUrl: './sidebar.component.html'
 })
 export class SidebarComponent implements OnInit {
+  @Input() isMobileMenuOpen = false;
+  @Output() isMobileMenuOpenChange = new EventEmitter<boolean>();
+
   menuItems: MenuItem[] = [];
   currentUser: { name: string; role: string; } | null = null;
 
@@ -97,5 +100,13 @@ export class SidebarComponent implements OnInit {
 
   private redirectToLogin() {
     this.router.navigate(['/fidelity-bond/login']);
+  }
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpenChange.emit(!this.isMobileMenuOpen);
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpenChange.emit(false);
   }
 } 

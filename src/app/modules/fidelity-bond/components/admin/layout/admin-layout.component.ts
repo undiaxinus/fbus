@@ -9,4 +9,10 @@ import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
   standalone: true,
   imports: [CommonModule, RouterModule, SidebarComponent]
 })
-export class AdminLayoutComponent {} 
+export class AdminLayoutComponent {
+  isMobileMenuOpen = false;
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+} 
