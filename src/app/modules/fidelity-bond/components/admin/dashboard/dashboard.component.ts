@@ -28,7 +28,7 @@ interface DashboardStats {
   expiredBonds: number;
   supplyBonds: number;
   proCpoPmbBonds: number;
-  hsuBonds: number;
+  rsuBonds: number;
   rhqBonds: number;
 }
 
@@ -64,7 +64,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     expiredBonds: 0,
     supplyBonds: 0,
     proCpoPmbBonds: 0,
-    hsuBonds: 0,
+    rsuBonds: 0,
     rhqBonds: 0
   };
 
@@ -187,9 +187,9 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
           supplyBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('supply')).length,
           proCpoPmbBonds: activeBonds.filter(bond => {
             const office = bond.unit_office?.toLowerCase() || '';
-            return office.includes('pro') || office.includes('cpo') || office.includes('pmb');
+            return office.includes('ppo') || office.includes('cpo') || office.includes('rmfb');
           }).length,
-          hsuBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('hsu')).length,
+          rsuBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('rsu')).length,
           rhqBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('rhq')).length
         };
 
