@@ -40,39 +40,6 @@
       </div>
     </div>
 
-    <!-- Department Stats -->
-    <div class="col-span-full bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <div class="flex items-center justify-between mb-4 cursor-pointer" (click)="isDepartmentStatsVisible = !isDepartmentStatsVisible">
-        <h2 class="text-lg font-semibold text-gray-900">Department Bond Statistics</h2>
-        <svg class="w-5 h-5 text-gray-500 transition-transform duration-300" [class.rotate-180]="isDepartmentStatsVisible" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-        </svg>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300 overflow-hidden" [class.h-0]="!isDepartmentStatsVisible" [class.opacity-0]="!isDepartmentStatsVisible" [class.h-auto]="isDepartmentStatsVisible" [class.opacity-100]="isDepartmentStatsVisible">
-        <div *ngFor="let dept of departmentStats" class="bg-gray-50 rounded-lg p-4">
-          <h3 class="text-gray-700 font-medium mb-2">{{dept.name}}</h3>
-          <div class="space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-500">Total Bonds:</span>
-              <span class="font-semibold text-gray-900">{{dept.totalBonds}}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-500">Active:</span>
-              <span class="font-semibold text-green-600">{{dept.activeBonds}}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-500">Expiring Soon:</span>
-              <span class="font-semibold text-yellow-600">{{dept.expiringBonds}}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-500">Expired:</span>
-              <span class="font-semibold text-red-600">{{dept.expiredBonds}}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Total Bonds -->
     <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
       <div class="flex items-center justify-between mb-4">
@@ -96,7 +63,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </div>
-        <span class="text-green-500 text-sm font-medium bg-green-50 px-2.5 py-1 rounded-full">82.4%</span>
+        <span class="text-green-500 text-sm font-medium bg-green-50 px-2.5 py-1 rounded-full">{{activeRate}}</span>
       </div>
       <h3 class="text-gray-500 text-sm font-medium tracking-wider">Active Bonds</h3>
       <p class="text-3xl font-bold text-gray-900 mt-2">{{stats.activeBonds}}</p>
@@ -131,6 +98,45 @@
       <h3 class="text-gray-500 text-sm font-medium tracking-wider">Expired Bonds</h3>
       <p class="text-3xl font-bold text-gray-900 mt-2">{{stats.expiredBonds}}</p>
       <p class="text-gray-400 text-sm mt-2">needs review</p>
+    </div>
+  </div>
+
+  <!-- Department Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- Supply -->
+    <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
+      <h3 class="text-gray-700 font-medium mb-2">Supply</h3>
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-500">Total Bonds:</span>
+        <span class="text-xl font-bold text-gray-900">{{stats.supplyBonds}}</span>
+      </div>
+    </div>
+
+    <!-- Pro/CPO/PMB -->
+    <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
+      <h3 class="text-gray-700 font-medium mb-2">Pro/CPO/PMB</h3>
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-500">Total Bonds:</span>
+        <span class="text-xl font-bold text-gray-900">{{stats.proCpoPmbBonds}}</span>
+      </div>
+    </div>
+
+    <!-- HSU -->
+    <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
+      <h3 class="text-gray-700 font-medium mb-2">HSU</h3>
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-500">Total Bonds:</span>
+        <span class="text-xl font-bold text-gray-900">{{stats.hsuBonds}}</span>
+      </div>
+    </div>
+
+    <!-- RHQ -->
+    <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
+      <h3 class="text-gray-700 font-medium mb-2">RHQ</h3>
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-500">Total Bonds:</span>
+        <span class="text-xl font-bold text-gray-900">{{stats.rhqBonds}}</span>
+      </div>
     </div>
   </div>
 

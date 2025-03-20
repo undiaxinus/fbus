@@ -26,6 +26,10 @@ interface DashboardStats {
   activeBonds: number;
   expiringBonds: number;
   expiredBonds: number;
+  supplyBonds: number;
+  proCpoPmbBonds: number;
+  hsuBonds: number;
+  rhqBonds: number;
 }
 
 interface DepartmentStats {
@@ -57,7 +61,11 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     totalBonds: 0,
     activeBonds: 0,
     expiringBonds: 0,
-    expiredBonds: 0
+    expiredBonds: 0,
+    supplyBonds: 0,
+    proCpoPmbBonds: 0,
+    hsuBonds: 0,
+    rhqBonds: 0
   };
 
   departmentStats: DepartmentStats[] = [];
@@ -170,12 +178,19 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
         // Only count non-archived bonds
         const activeBonds = (data as Bond[]).filter((bond: Bond) => !bond.is_archived);
         
-        // Calculate stats based on bond status
+        // Calculate stats based on bond status and department
         this.stats = {
           totalBonds: activeBonds.length,
           activeBonds: activeBonds.filter(bond => this.calculateBondStatus(bond) === 'VALID').length,
           expiringBonds: activeBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRE SOON').length,
-          expiredBonds: activeBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRED').length
+          expiredBonds: activeBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRED').length,
+          supplyBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('supply')).length,
+          proCpoPmbBonds: activeBonds.filter(bond => {
+            const office = bond.unit_office?.toLowerCase() || '';
+            return office.includes('pro') || office.includes('cpo') || office.includes('pmb');
+          }).length,
+          hsuBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('hsu')).length,
+          rhqBonds: activeBonds.filter(bond => bond.unit_office?.toLowerCase().includes('rhq')).length
         };
 
         // Calculate active rate percentage
