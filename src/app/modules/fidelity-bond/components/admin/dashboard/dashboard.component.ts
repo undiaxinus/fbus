@@ -486,4 +486,33 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   closeActivitiesModal() {
     this.showActivitiesModal = false;
   }
+
+  getDepartmentStats(department: string): DepartmentStats {
+    const defaultStats: DepartmentStats = {
+      name: department,
+      totalBonds: 0,
+      activeBonds: 0,
+      expiringBonds: 0,
+      expiredBonds: 0
+    };
+
+    const stats = this.departmentStats.find(d => d.name.toLowerCase().includes(department.toLowerCase()));
+    return stats || defaultStats;
+  }
+
+  getPpoCpoRmfbStats(): DepartmentStats {
+    const defaultStats: DepartmentStats = {
+      name: 'PPO/CPO/RMFB',
+      totalBonds: 0,
+      activeBonds: 0,
+      expiringBonds: 0,
+      expiredBonds: 0
+    };
+
+    const stats = this.departmentStats.find(d => {
+      const name = d.name.toLowerCase();
+      return name.includes('ppo') || name.includes('cpo') || name.includes('rmfb');
+    });
+    return stats || defaultStats;
+  }
 }

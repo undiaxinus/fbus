@@ -106,36 +106,92 @@
     <!-- Supply -->
     <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
       <h3 class="text-gray-700 font-medium mb-2">Supply</h3>
-      <div class="flex justify-between items-center">
-        <span class="text-sm text-gray-500">Total Bonds:</span>
-        <span class="text-xl font-bold text-gray-900">{{stats.supplyBonds}}</span>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Total Bonds:</span>
+          <span class="text-xl font-bold text-gray-900">{{stats.supplyBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Active:</span>
+          <span class="text-sm font-medium text-green-600">{{getDepartmentStats('supply').activeBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expiring Soon:</span>
+          <span class="text-sm font-medium text-yellow-600">{{getDepartmentStats('supply').expiringBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expired:</span>
+          <span class="text-sm font-medium text-red-600">{{getDepartmentStats('supply').expiredBonds}}</span>
+        </div>
       </div>
     </div>
 
     <!-- PPO/CPO/RMFB -->
     <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
       <h3 class="text-gray-700 font-medium mb-2">PPO/CPO/RMFB</h3>
-      <div class="flex justify-between items-center">
-        <span class="text-sm text-gray-500">Total Bonds:</span>
-        <span class="text-xl font-bold text-gray-900">{{stats.proCpoPmbBonds}}</span>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Total Bonds:</span>
+          <span class="text-xl font-bold text-gray-900">{{stats.proCpoPmbBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Active:</span>
+          <span class="text-sm font-medium text-green-600">{{getPpoCpoRmfbStats().activeBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expiring Soon:</span>
+          <span class="text-sm font-medium text-yellow-600">{{getPpoCpoRmfbStats().expiringBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expired:</span>
+          <span class="text-sm font-medium text-red-600">{{getPpoCpoRmfbStats().expiredBonds}}</span>
+        </div>
       </div>
     </div>
 
     <!-- RSU -->
     <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
       <h3 class="text-gray-700 font-medium mb-2">RSU</h3>
-      <div class="flex justify-between items-center">
-        <span class="text-sm text-gray-500">Total Bonds:</span>
-        <span class="text-xl font-bold text-gray-900">{{stats.rsuBonds}}</span>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Total Bonds:</span>
+          <span class="text-xl font-bold text-gray-900">{{stats.rsuBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Active:</span>
+          <span class="text-sm font-medium text-green-600">{{getDepartmentStats('rsu').activeBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expiring Soon:</span>
+          <span class="text-sm font-medium text-yellow-600">{{getDepartmentStats('rsu').expiringBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expired:</span>
+          <span class="text-sm font-medium text-red-600">{{getDepartmentStats('rsu').expiredBonds}}</span>
+        </div>
       </div>
     </div>
 
     <!-- RHQ -->
     <div class="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100">
       <h3 class="text-gray-700 font-medium mb-2">RHQ</h3>
-      <div class="flex justify-between items-center">
-        <span class="text-sm text-gray-500">Total Bonds:</span>
-        <span class="text-xl font-bold text-gray-900">{{stats.rhqBonds}}</span>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Total Bonds:</span>
+          <span class="text-xl font-bold text-gray-900">{{stats.rhqBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Active:</span>
+          <span class="text-sm font-medium text-green-600">{{getDepartmentStats('rhq').activeBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expiring Soon:</span>
+          <span class="text-sm font-medium text-yellow-600">{{getDepartmentStats('rhq').expiringBonds}}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Expired:</span>
+          <span class="text-sm font-medium text-red-600">{{getDepartmentStats('rhq').expiredBonds}}</span>
+        </div>
       </div>
     </div>
   </div>
