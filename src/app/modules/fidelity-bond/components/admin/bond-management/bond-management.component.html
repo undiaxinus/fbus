@@ -737,11 +737,24 @@
 
               <div>
                 <label for="unit_office" class="block text-sm font-medium text-gray-700">Unit/Office</label>
-                <select name="unit_office" id="unit_office" [(ngModel)]="newBond.unit_office" required
+                <select 
+                  name="unit_office_select" 
+                  id="unit_office_select" 
+                  (change)="onUnitOfficeSelectChange($event)"
+                  required
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                   <option value="">Select Unit/Office</option>
                   <option *ngFor="let unit of availableUnits" [value]="unit.units">{{unit.units}}</option>
+                  <option value="others">Others</option>
                 </select>
+                <input type="text" 
+                       *ngIf="showUnitOfficeInput"
+                       name="unit_office" 
+                       id="unit_office" 
+                       [(ngModel)]="newBond.unit_office" 
+                       required
+                       placeholder="Enter Unit/Office"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
               </div>
 
               <div>

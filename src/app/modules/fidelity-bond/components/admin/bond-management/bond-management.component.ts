@@ -262,6 +262,8 @@ export class BondManagementComponent implements OnInit {
     return this.activeBonds.filter(bond => this.calculateBondStatus(bond) === 'EXPIRED');
   }
 
+  showUnitOfficeInput: boolean = false;
+
   constructor(
     private supabase: SupabaseService,
     private storageService: StorageService,
@@ -2265,6 +2267,27 @@ export class BondManagementComponent implements OnInit {
     this.activeTab = tab;
     if (tab === 'history') {
       await this.loadBondHistory();
+    }
+  }
+
+  onUnitOfficeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    if (select) {
+      this.newBond.unit_office = select.value;
+    }
+  }
+
+  onUnitOfficeSelectChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    if (select) {
+      const selectedValue = select.value;
+      if (selectedValue === 'others') {
+        this.showUnitOfficeInput = true;
+        this.newBond.unit_office = ''; // Clear the input when selecting "Others"
+      } else {
+        this.showUnitOfficeInput = false;
+        this.newBond.unit_office = selectedValue;
+      }
     }
   }
 }
